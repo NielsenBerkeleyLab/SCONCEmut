@@ -20,7 +20,7 @@ parallel -j 10 zgrep -E -w chr{} "$pileup" > pooledPileupFiles/diploid_chr_{}.mp
 
 # find pooled diploid major allele (./calc_reads_parallel.sh) TODO missing chrX,Y since sometimes labelled chr22. just throw out for now
 for i in $(seq 1 22) ; do
-  echo "python3 calculate_read_counts.py -f pooledPileupFiles/diploid_chr_"$i".mpileup -t diploid -i "$i" > pooledMajorAlleleReadCounts/diploid_chr_"$i".err 2>&1"
+  echo "python3 find_major_allele.py -f pooledPileupFiles/diploid_chr_"$i".mpileup -t diploid -i "$i" > pooledMajorAlleleReadCounts/diploid_chr_"$i".err 2>&1"
 done | parallel -j 10
 
 # reformat calc_reads_parallel.sh output into bed file (./create_chromosome_bedfiles.sh)
