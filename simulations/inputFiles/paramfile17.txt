@@ -1,0 +1,26 @@
+12397 50 4e6 4.032735e-06 1.0e-3 1
+
+100 50 50000 1.0e-3 1.0e-3 1
+
+This means that the genome is divided into 12397 bins. The parameter, r, of the negative binomial is r=50 (must be integer, converges to Poisson as r -> infinity).  Total expected number of reads is 4000000 (notice that this number is random). 
+
+The length of a read as fraction of the length of the genome is given by 1.0e-3 (ie prob of a snp being covered by a read). ==> 1e-3 * 2,479,706,951 = 2,479,706.951 bp read length (unreasonable).
+100bp read length / 2,479,706,951 (num mappable bases in hg19) = frac / simGenomeLen(100) ==> 4.032735e-06
+
+The error rate is 1.0e-3.
+
+An even coverage (because =1) in expectation before accounting for copy number variation is expected.
+
+
+12397 50 4000000 1
+
+hg19_lite has 12397 bins when divided into equally sized 250kb bins. In the Navin Nature 2011 dataset, the diploid mean read count in euqally sized 250kb bins is summarized as:
+Min.   :  0.0
+1st Qu.:314.6
+Median :351.2
+Mean   :316.1
+3rd Qu.:377.1
+Max.   :867.6
+
+4000000 / 12397 bins ==> 322.6587077518755 reads expected per bin
+

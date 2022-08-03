@@ -1,3 +1,4 @@
 SCONCEmut
 *.swp
 build/*.o
+simulations/SCONCEmut_sim

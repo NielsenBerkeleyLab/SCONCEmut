@@ -1,0 +1,9 @@
+Note: parameter set numbers and letters (in the manuscript) correspond as follows:
+A: 14 (ultrametric, maximally imbalanced, 4e6 reads
+B: 15 (ultrametric, perfectly balanced, 4e6 reads)
+C: 16 (not ultrametric, maximally imbalanced, uniform branch lengths, 4e6 reads)
+D: 17 (not ultrametric, maximally imbalanced, uniform internal branches, logarithmically decaying terminal branches, 4e6 reads)
+E: 32 (ultrametric, maximally imbalanced, 4e7 reads)
+F: 33 (ultrametric, maximally imbalanced, 4e8 reads)
+G: 34 (ultrametric, maximally imbalanced, 4e9 reads)
+
