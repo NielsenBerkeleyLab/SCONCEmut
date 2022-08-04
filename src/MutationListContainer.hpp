@@ -48,7 +48,6 @@ class MutationListContainer : public Optimizable {
     virtual void convertParamToProb(gsl_vector* dest, const gsl_vector* src) const override;
     virtual void setInitGuessNthTime(gsl_vector* initGuess, int iter, int numTotalRuns) const override;
     virtual Optimizable* bfgs(gsl_vector* initGuess, int maxIters, bool verbose = true, bool debug = false) override; // this one should construct a subclass Optimizable, convert initGuess into BFGS space, and call Optimizable::bfgs
-    //virtual double getLogLikelihood() override;
     virtual void print(FILE* stream) override;
     virtual double checkOptimProbValidity(gsl_vector* probs) const override;
     virtual double getValidOptimParamMax() const = 0; // ex estimated x1+x2+x3 shouldn't be greater than N

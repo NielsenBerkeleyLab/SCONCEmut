@@ -22,8 +22,6 @@ MutationList::MutationList(std::string mutationFilename, std::pair<std::unordere
   std::string mutationLine;
   std::string key;
   std::string chr;
-  std::string refAllele; // not used yet but available
-  std::string altAllele; // not used yet but available
   long long int coord = -1;
   long long int end = -1;
   int numRefReads = -1;
@@ -36,7 +34,6 @@ MutationList::MutationList(std::string mutationFilename, std::pair<std::unordere
   while(getline(mutation, mutationLine)) {
     // parse mutation line
     std::istringstream iss(mutationLine);
-    //iss >> chr >> coord >> refAllele >> altAllele >> numRefReads >> numAltReads;
     iss >> chr >> coord >> end >> numRefReads >> numAltReads;
     key = chr + ":" + std::to_string(coord);
 
@@ -53,7 +50,6 @@ MutationList::MutationList(std::string mutationFilename, std::pair<std::unordere
   }
   mutation.close();
   this->coordBinomCoefMap = new std::unordered_map<std::string, double>();
-  //this->coordBinomCoefMap = new std::unordered_map<std::string, long double>();
   this->setupBinomCoefs();
   this->logCNvec = nullptr;
 }
@@ -172,7 +168,6 @@ double MutationList::getLikelihood(std::string site, bool isAltAllele) {
   // if missing data (ie this cell does not have data for this site), return 0 (ie no contribution to the likelihood function). if n_ij = A_ij = 0; P(D_ij | f, w, k, CN_ij) = 0
   if(this->coordNumRefReadsMap->count(site) == 0) {
     return 1;
-    //std::cout << "no data for site: " << site << std::endl;
     return 0;
   }
   double likelihood = 0;
@@ -185,102 +180,41 @@ double MutationList::getLikelihood(std::string site, bool isAltAllele) {
   double numRefReads = (*this->coordNumRefReadsMap)[site]; // R_ij = n_ij - A_ij, where n_ij is the total read depth at this site and cell
   double numAltReads = (*this->coordNumAltReadsMap)[site]; // A_ij
   double numTotalReads = numRefReads + numAltReads;
-  //long double nChooseA = boost::math::binomial_coefficient<long double>(numTotalReads, numAltReads); // (n_ij choose A_ij)
   double nChooseA = this->getBinomCoef(site); // (n_ij choose A_ij)
 
   // if infer copy number 0, return 0 (no contribution to the likelihood function)
   int sconceCN = (*this->coordSconceCNMap)[site]; // CN_ij
   if(sconceCN == 0) {
-    //std::cout << "sconceCN == 0 for site: " << site << std::endl;
-    //return 1;
     return 0;
   }
-  //double logSconceCN = log(1.0 / sconceCN);
   double logSconceCN = this->getLogCN(sconceCN);
-  //double denomSum = 0;
-  //for(int i = 1; i <= sconceCN; i++) {
-  //  denomSum += i;
-  //}
-  //double logDenomSum = log(1.0 / denomSum);
-  //std::cout << logSconceCN << ", " << log(1.0 / sconceCN) << std::endl;
   double currLl = 0;
 
   // if true underlying state is the alternate allele, then we sum P(A_ij | D_ij, f, mutOverdispOmega) over 0<=k<CN,0<l<=CN, k+l=CN, with f = l/(k+l)*(1-eps) + k/(k+l)*eps
   if(isAltAllele) {
-    //double normalizingConstant = 0;
     for(refCN = 0; refCN < sconceCN; refCN++) {
-    //for(refCN = sconceCN - 1; refCN < sconceCN; refCN++) { // singleton allele frequency. refCN = sconceCN - 1; altCN = 1
       altCN = sconceCN - refCN;
-      //altAlleleFreq = (double) altCN / (double) (altCN + refCN) * (1.0 - this->SEQUENCING_ERROR_RATE) + (double) refCN / (double) (altCN + refCN) * this->SEQUENCING_ERROR_RATE;
       altAlleleFreq = (double) altCN / (double) (sconceCN) * (1.0 - this->SEQUENCING_ERROR_RATE) + (double) refCN / (double) (sconceCN) * this->SEQUENCING_ERROR_RATE;
-      //altAlleleFreq = (double) altCN / (double) (sconceCN) * (1.0 - 0.001) + (double) refCN / (double) (sconceCN) * 0.001;
       alpha = this->mutOverdispOmega * altAlleleFreq; // alpha = wf
       beta = this->mutOverdispOmega * (1.0 - altAlleleFreq); // beta = w(1-f)
       if(alpha < 0 || beta < 0 || (numAltReads + alpha) < 0 || (numTotalReads - numAltReads + beta) < 0) {
         return GSL_NAN;
       }
-      //std::cout << "numAltReads: " << numAltReads << ", numRefReads: " << numRefReads << ", altCN: " << altCN << ", refCN: " << refCN << ", altAF: " << altAlleleFreq << ", alpha: " << alpha << ", beta: " << beta << ", nChooseA: " << exp(nChooseA) << ", ll: " << exp(nChooseA + gsl_sf_lnbeta(numAltReads + alpha, numTotalReads - numAltReads + beta) - gsl_sf_lnbeta(alpha, beta)) << std::endl;
-      //likelihood += nChooseA * boost::math::beta<long double>(numAltReads + alpha, numTotalReads - numAltReads + beta) / boost::math::beta<long double>(alpha, beta);
-      //likelihood += exp(nChooseA + gsl_sf_lnbeta(numAltReads + alpha, numTotalReads - numAltReads + beta) - gsl_sf_lnbeta(alpha, beta));
       currLl = exp(nChooseA + gsl_sf_lnbeta(numAltReads + alpha, numTotalReads - numAltReads + beta) - gsl_sf_lnbeta(alpha, beta) + logSconceCN); // all allele freqs equally likely
-      //currLl = exp(nChooseA + gsl_sf_lnbeta(numAltReads + alpha, numTotalReads - numAltReads + beta) - gsl_sf_lnbeta(alpha, beta)); // singleton allele freq
-      //currLl = exp(nChooseA + gsl_sf_lnbeta(numAltReads + alpha, numTotalReads - numAltReads + beta) - gsl_sf_lnbeta(alpha, beta) + log(refCN + 1) + logDenomSum); // based on allele count
-      //std::cout << "numAltReads: " << numAltReads << ", numRefReads: " << numRefReads << ", altCN: " << altCN << ", refCN: " << refCN << ", altAF: " << altAlleleFreq << ", alpha: " << alpha << ", beta: " << beta << ", nChooseA: " << exp(nChooseA) << ", P(D_ij|k)*P(k|CN): " << currLl << std::endl;
-      //std::cout << "numDerivedReads: " << numAltReads << ", numAncestralReads: " << numRefReads << ", derivedCN: " << altCN << ", ancestralCN: " << refCN << ", derivedAF: " << altAlleleFreq << ", alpha: " << alpha << ", beta: " << beta << ", P(D_ij|k)*P(k|CN): " << currLl << std::endl;
       likelihood += currLl;
-      //normalizingConstant += 1;
-
-      //for(int derReadCounter = 0; derReadCounter <= numTotalReads; derReadCounter++) {
-      //  //currLl = exp(gsl_sf_lnchoose(numTotalReads, derReadCounter) + gsl_sf_lnbeta(derReadCounter + alpha, numTotalReads - derReadCounter + beta) - gsl_sf_lnbeta(alpha, beta) + logSconceCN); // all allele freqs equally likely
-      //  //currLl = exp(gsl_sf_lnchoose(numTotalReads, derReadCounter) + gsl_sf_lnbeta(derReadCounter + alpha, numTotalReads - derReadCounter + beta) - gsl_sf_lnbeta(alpha, beta)); // singleton allele freq
-      //  currLl = exp(gsl_sf_lnchoose(numTotalReads, derReadCounter) + gsl_sf_lnbeta(derReadCounter + alpha, numTotalReads - derReadCounter + beta) - gsl_sf_lnbeta(alpha, beta) + log(refCN + 1) + logDenomSum); // based on allele count
-      //  std::cout << "numDerivedReads: " << derReadCounter << ", numAncestralReads: " << numRefReads << ", derivedCN: " << altCN << ", ancestralCN: " << refCN << ", derivedAF: " << altAlleleFreq << ", alpha: " << alpha << ", beta: " << beta << ", P(d_ij=" << derReadCounter << "|k)*P(k|CN): " << currLl << std::endl;
-      //}
-      /*for(double currOmega = 0.01; currOmega < 10; currOmega += 0.01) {
-        alpha = currOmega * altAlleleFreq; // alpha = wf
-        beta = currOmega * (1.0 - altAlleleFreq); // beta = w(1-f)
-        printf("currOmega: %0.2f, alpha: %0.2f, beta: %0.2f, numAlt: %f, numTot: %f, ll: %0.40f\n", currOmega, alpha, beta, numAltReads, numTotalReads, exp(nChooseA + gsl_sf_lnbeta(numAltReads + alpha, numTotalReads - numAltReads + beta) - gsl_sf_lnbeta(alpha, beta) + logSconceCN));
-      }
-      for(int currOmega = 10; currOmega < 10000; currOmega += 10) {
-        alpha = currOmega * altAlleleFreq; // alpha = wf
-        beta = currOmega * (1.0 - altAlleleFreq); // beta = w(1-f)
-        printf("currOmega: %i, alpha: %0.2f, beta: %0.2f, numAlt: %f, numTot: %f, ll: %0.40f\n", currOmega, alpha, beta, numAltReads, numTotalReads, exp(nChooseA + gsl_sf_lnbeta(numAltReads + alpha, numTotalReads - numAltReads + beta) - gsl_sf_lnbeta(alpha, beta) + logSconceCN));
-      }*/
-
-      // make lower freq (closer to singleton) more likely altCN / sconceCN
-      //likelihood += exp(nChooseA + gsl_sf_lnbeta(numAltReads + alpha, numTotalReads - numAltReads + beta) - gsl_sf_lnbeta(alpha, beta)) * (refCN + 1);
-      //normalizingConstant += refCN + 1;
-      //likelihood += exp(nChooseA + gsl_sf_lnbeta(numAltReads + alpha, numTotalReads - numAltReads + beta) - gsl_sf_lnbeta(alpha, beta)) * (altCN);
-      //normalizingConstant += altCN;
     }
-    //std::cout << "P(D_ij | S_ij = 1) = sum_(0 <= k < CN) P(D_ij|k)*P(k|CN): " << likelihood << std::endl;
-    // normalize by dividing by sconce CN (all allele freqs are equally likely)
-    //likelihood /= (double) sconceCN;
-    //likelihood /= normalizingConstant;
   }
   // else is ref allele, we set k=CN,l=0
   else {
     altCN = 0;
     refCN = sconceCN;
     altAlleleFreq = (double) altCN / (double) (sconceCN) * (1.0 - this->SEQUENCING_ERROR_RATE) + (double) refCN / (double) (sconceCN) * this->SEQUENCING_ERROR_RATE;
-    //altAlleleFreq = (double) altCN / (double) (altCN + refCN) * (1.0 - 0.001) + (double) refCN / (double) (altCN + refCN) * 0.001;
     alpha = this->mutOverdispOmega * altAlleleFreq; // alpha = wf
     beta = this->mutOverdispOmega * (1.0 - altAlleleFreq); // beta = w(1-f)
     if(alpha < 0 || beta < 0 || (numAltReads + alpha) < 0 || (numTotalReads - numAltReads + beta) < 0) {
       return GSL_NAN;
     }
-    //std::cout << "numAltReads: " << numAltReads << ", numRefReads: " << numRefReads << ", altCN: " << altCN << ", refCN: " << refCN << ", altAF: " << altAlleleFreq << ", alpha: " << alpha << ", beta: " << beta << ", nChooseA: " << exp(nChooseA) << ", ll: " << exp(nChooseA + gsl_sf_lnbeta(numAltReads + alpha, numTotalReads - numAltReads + beta) - gsl_sf_lnbeta(alpha, beta)) << std::endl;
-    //likelihood = nChooseA * boost::math::beta<long double>(numAltReads + alpha, numTotalReads - numAltReads + beta) / boost::math::beta<long double>(alpha, beta);
     likelihood = exp(nChooseA + gsl_sf_lnbeta(numAltReads + alpha, numTotalReads - numAltReads + beta) - gsl_sf_lnbeta(alpha, beta));
-    //std::cout << "numAltReads: " << numAltReads << ", numRefReads: " << numRefReads << ", altCN: " << altCN << ", refCN: " << refCN << ", altAF: " << altAlleleFreq << ", alpha: " << alpha << ", beta: " << beta << ", nChooseA: " << exp(nChooseA) << ", ll: " << likelihood << std::endl;
-    //std::cout << "numDerivedReads: " << numAltReads << ", numAncestralReads: " << numRefReads << ", derivedCN: " << altCN << ", ancestralCN: " << refCN << ", derivedAF: " << altAlleleFreq << ", alpha: " << alpha << ", beta: " << beta << ", P(D_ij|k): " << likelihood << std::endl;
-    //std::cout << "P(D_ij | S_ij = 0) = P(D_ij|k=CN) " << likelihood << std::endl;
-    //for(int derReadCounter = 0; derReadCounter <= numTotalReads; derReadCounter++) {
-    //  //currLl = exp(gsl_sf_lnchoose(numTotalReads, derReadCounter) + gsl_sf_lnbeta(derReadCounter + alpha, numTotalReads - derReadCounter + beta) - gsl_sf_lnbeta(alpha, beta) + logSconceCN);
-    //  currLl = exp(gsl_sf_lnchoose(numTotalReads, derReadCounter) + gsl_sf_lnbeta(derReadCounter + alpha, numTotalReads - derReadCounter + beta) - gsl_sf_lnbeta(alpha, beta));
-    //  std::cout << "numDerivedReads: " << derReadCounter << ", numAncestralReads: " << numRefReads << ", derivedCN: " << altCN << ", ancestralCN: " << refCN << ", derivedAF: " << altAlleleFreq << ", alpha: " << alpha << ", beta: " << beta << ", P(d_ij=" << derReadCounter << "|k)*P(k|CN): " << currLl << std::endl;
-    //}
-
   }
   return likelihood;
 }

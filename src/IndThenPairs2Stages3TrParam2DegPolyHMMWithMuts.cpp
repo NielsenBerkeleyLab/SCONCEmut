@@ -15,7 +15,6 @@ IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::IndThenPairs2Stages3TrParam2DegP
 IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::~IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts() {
   // TODO
 }
-//void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::cleanUpIndOptim(); // override to also delete mutIndVec and mutJointDisp? need to keep mutListVec TODO
 
 void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::print(FILE* stream) {
   if(this->ind2StagesVec != nullptr) {
@@ -91,10 +90,6 @@ gsl_vector* IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::getAllPairedEstMutCo
   }
   return nullptr;
 }
-
-//void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::setUpInd2Stages() {
-//  // don't think actually need to do this. definitely need to add a step to est mu, but I think that can be local to this class and don't think that has to be OneCell*WithMuts
-//}
 
 /*
  * function to estimate mutation count X (and rate mu, given t) for each individual cell, then get the median of all mu estimates and store in this->cnaToMutRateMu
@@ -176,34 +171,19 @@ void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::estMutOverdispOmegaJointlyA
  */
 void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::estCnaToMutRateMuAndMutOverdispOmegaJointlyAcrossAllIndCells(std::string sconceEstimatesPath) {
   gsl_vector* indBranchEsts = this->getIndOptimAllBranchEsts();
-  //printColVector(indBranchEsts);
   std::vector<std::unordered_map<std::string, std::vector<int>*>*>* allChrToViterbiPathMapVec = this->getIndOptimAllChrToViterbiPathMapVec();
 
   this->mutJointMutRateOverdisp = new MutationJointMutRateOverdisp(this->mutListVec, allChrToViterbiPathMapVec, indBranchEsts, this->verbose, this->gradientDebug);
   this->mutJointMutRateOverdisp->setNumThreads(this->numThreads);
-  //this->mutJointMutRateOverdisp->print(stdout);
 
   // check if sconceMutParams files have already been created. If all of them exist, then can skip over mu/omega estimation. If missing some, must redo estimation
   double status = this->mutJointMutRateOverdisp->getMutParamsFromFile(this->sampleList, this->MAX_PLOIDY, sconceEstimatesPath); // TODO put this back in to read sconceMutParams
-  //double status = GSL_NAN;
-  //std::cout << "getMutParamsFromFile status: " << status << std::endl;
 
   // if didn't successfully read from files, do joint estimation
   if(gsl_isnan(status)) {
-    // optimize mu and omega jointly
     gsl_vector* initGuess = gsl_vector_alloc(2);
-    //gsl_vector_set_all(initGuess, 5000);
-    //gsl_vector_set_all(initGuess, 1);
-    //gsl_vector_set_all(initGuess, 10);
-    gsl_vector_set_all(initGuess, 20000);
-    //gsl_vector_set(initGuess, 0, 0.01); // cnaToMutRateMu
-    //gsl_vector_set(initGuess, 0, 10); // cnaToMutRateMu
-    //gsl_vector_set(initGuess, 1, 9.686635); // mutOverdispOmega # value learned from Navin 2011 data
-    //gsl_vector* initGuess = gsl_vector_alloc(1);
+    gsl_vector_set(initGuess, 0, 20000); // cnaToMutRateMu
     gsl_vector_set(initGuess, 1, 10); // mutOverdispOmega
-    //gsl_vector_set(initGuess, 1, 0.1); // mutOverdispOmega
-    //gsl_vector_set(initGuess, 1, 100); // mutOverdispOmega
-    //gsl_vector_set(initGuess, 1, 1000); // mutOverdispOmega
     if(this->verbose) {
       std::lock_guard<std::mutex> lock(Optimizable::mtx); // from https://stackoverflow.com/a/18277334
       std::cout << "Calling BFGS for MutationJointMutRateOverdisp (mu and omega):" << std::endl;
@@ -227,14 +207,12 @@ void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::estCnaToMutRateMuAndMutOver
       gsl_vector_set(initGuess, 1, 20);
       this->mutJointMutRateOverdisp->bfgs(initGuess, 500, this->verbose, this->gradientDebug);
     }
-    //this->mutJointMutRateOverdisp->bfgs(initGuess, 1, this->verbose, this->gradientDebug);
     gsl_vector_free(initGuess);
   }
 
   // store omega in calling object and in MutationLists directly (cnaToMutRate doesn't belong to MutationList class)
   this->cnaToMutRateMu = this->mutJointMutRateOverdisp->getCnaToMutRateMu();
   this->mutOverdispOmega = this->mutJointMutRateOverdisp->getMutOverdispOmega();
-  //this->mutOverdispOmega = 20; // debugging
   for(unsigned int mutListIdx = 0; mutListIdx < this->mutListVec->size(); mutListIdx++) {
     (*this->mutListVec)[mutListIdx]->setMutOverdispOmega(this->mutOverdispOmega);
   }
@@ -247,13 +225,11 @@ void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::estCnaToMutRateMuAndMutOver
 
   this->allIndEstMutCounts = this->getAllIndEstMutCounts();
 
-  //double jointLl = this->mutJointMutRateOverdisp->getLogLikelihood(); // no need to optim mut counts again, already set
   if(this->verbose) {
     std::lock_guard<std::mutex> lock(Optimizable::mtx); // from https://stackoverflow.com/a/18277334
     fprintf(stdout, "JOINT MUTATION PARAMETERS cnaToMutRateMu and mutOverdispOmega:\n%.40f\n%.40f\n", this->cnaToMutRateMu, this->mutOverdispOmega);
     fprintf(stdout, "\nallIndEstMutCounts:\n");
     printColVector(this->allIndEstMutCounts);
-    //std::cout << "\nJOINT MUTATION PARAMETERS loglikelihood: " << jointLl << std::endl;
   }
 }
 
@@ -261,25 +237,17 @@ void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::estCnaToMutRateMuAndMutOver
  * function to estimate, set, and save mu and omega parameters using independent cell results from sconce
  */
 void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::estimateMutParamsFromIndCells(std::string sconceEstimatesPath, std::string filename) {
-  //// est cnaToMutRateMu and mutOverdispOmega separately
-  //this->estCnaToMutRateMuIndependentlyForAllIndCells(); // mu = median(mu_1, mu_2, ...)
-  //this->estMutOverdispOmegaJointlyAcrossAllIndCells(); // omega = one param optimized over all cells
-
   // reest t's with same median(beta) and median(lambda)
   this->reestIndBranchLengths();
 
   // est cnaToMutRateMu and mutOverdispOmega jointly across all cels (ie global ests for mu and omega)
   this->estCnaToMutRateMuAndMutOverdispOmegaJointlyAcrossAllIndCells(sconceEstimatesPath);
 
-  //this->print(stdout);
   // save mu and omega params to file
   for(unsigned int mutIndIdx = 0; mutIndIdx < this->mutListVec->size(); mutIndIdx++) {
     std::string cellName = (*this->sampleList)[mutIndIdx];
     boost::replace_all(cellName, ",", "__");
-    //std::cout << "about to saveMutParamsToFile:" << std::endl;
-    //(*this->mutIndVec)[mutIndIdx]->print(stdout);
     (*this->mutIndVec)[mutIndIdx]->saveMutParamsToFile(0, filename + "__" + cellName + "__k" + std::to_string(this->MAX_PLOIDY) + ".sconceMutParams"); // each MutationInd holds 1 MutationList, so always working with 0'th mutListIdx
-    //this->mutJointOverdisp->saveMutParamsToFile(mutIndIdx, filename + "__" + cellName + "__k" + std::to_string(this->MAX_PLOIDY) + ".sconceJointMutParams");
   }
 }
 
@@ -306,11 +274,7 @@ void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::reestIndBranchLengths() {
     newHmm->setMeanVarianceFn(meanVar);
     newHmm->setParamsToEst(branchEst);
     (*reestOneCellTsVec)[cellIdx] = newHmm;
-    //std::cout << "setting up branch length reest for cellIdx " << cellIdx << std::endl;
-    //newHmm->print(stdout);
   }
-
-
 
   // for each cell, optimize t using median beta/lambda
   boost::asio::thread_pool pool(this->numThreads);
@@ -320,8 +284,6 @@ void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::reestIndBranchLengths() {
     HMM* currHmm = (*reestOneCellTsVec)[cellIdx];
     gsl_vector* initGuess = gsl_vector_alloc(1);
     gsl_vector_memcpy(initGuess, currHmm->getParamsToEst());
-    //currHmm->bfgs(initGuess, 500, this->verbose, this->gradientDebug);
-    //currHmm->print(stdout);
 
     // Submit a lambda object to the pool
     boost::asio::post(pool,
@@ -342,8 +304,6 @@ void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::reestIndBranchLengths() {
   for(unsigned int cellIdx = 0; cellIdx < reestOneCellTsVec->size(); cellIdx++) {
     AllInd3TrParam2DegPolyHMM* currStage1Results = (*this->ind2StagesVec)[cellIdx]->getBFGSAllInd();
     HMM* optimThmm = (*reestOneCellTsVec)[cellIdx];
-    //std::cout << "optimThmm, cellIdx " << cellIdx << std::endl;
-    //optimThmm->print(stdout);
     gsl_vector_set(currParamsToEst, 0, optimThmm->getLibScalingFactor(0));
     gsl_vector_set(currParamsToEst, 1, medianBeta);
     gsl_vector_set(currParamsToEst, 2, medianLambda);
@@ -353,17 +313,10 @@ void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::reestIndBranchLengths() {
     currStage1Results->setFixedParamsFromIthHMM(currFixedParams, 0);
     (*currStage1Results->getHMMs())[0]->setParamsToEst(currParamsToEst);
     (*currStage1Results->getHMMs())[0]->setFixedParams(currFixedParams);
-    //std::cout << "set to currParamsToEst, currFixedParams" << std::endl;
-    //printRowVector(currParamsToEst);
-    //printRowVector(currFixedParams);
-    //std::cout << "currStage1Resutls" << std::endl;
-    //currStage1Results->print(stdout);
   }
   gsl_vector_free(currParamsToEst);
   gsl_vector_free(branchEst);
   gsl_vector_free(currFixedParams);
-  //std::cout << "saving branch lengths" << std::endl;
-  //this->print(stdout);
 }
 
 
@@ -378,10 +331,6 @@ void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::copyStage1EstsIntoStage2Fix
   gsl_vector_set(stage2FixedParams, stage2FixedParams->size - 1, this->cnaToMutRateMu);
 }
 
-//void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::estimateAllMutationPairMutCounts(std::string filename) {
-//  this->stage2Pairs->estimateAllMutationPairMutCounts(filename);
-//}
-
 void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::setUpAllPairsBFGS(gsl_vector* fixedParams, gsl_vector* initGuess, gsl_vector* meanVarianceCoefVec, bool fixLib, bool preallocIntermediates) {
   if(fixLib) {
     this->stage2Pairs = AllPairsFixLib0TrParam2DegPolyHMMWithMuts::create(this->depthsVec, this->sampleList, this->mutListVec, this->allIndEstMutCounts, fixedParams, this->MAX_PLOIDY, this->NUM_PAIRS_STAGE_2, meanVarianceCoefVec, preallocIntermediates);
@@ -393,9 +342,6 @@ void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::setUpAllPairsBFGS(gsl_vecto
   this->stage2Pairs->setParamsToEst(initGuess);
   this->stage2Pairs->setNumThreads(this->numThreads);
   this->stage2Pairs->setCentralDiffFlag(centralDiff);
-  //std::cout << "end of IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::setUpAllPairsBFGS:" << std::endl;
-  //this->stage2Pairs->print(stdout);
-
 }
 void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::setUpSelectPairsBFGS(gsl_vector* fixedParams, gsl_vector* initGuess, int numPairsToSummarize, int ordering, int seed, gsl_vector* meanVarianceCoefVec, bool fixLib, bool preallocIntermediates) {
   if(fixLib) {
@@ -409,12 +355,8 @@ void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::setUpSelectPairsBFGS(gsl_ve
   this->stage2Pairs->setNumThreads(this->numThreads);
   this->stage2Pairs->setCentralDiffFlag(this->centralDiff);
 }
-//void IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::optimIndCells(gsl_vector* initGuess, std::string filename, int numBWIters, int numLibStarts, int libStartVal, int maxBFGSIters, bool verbose, bool debug) {
-//  // don't think need to override. can just tack on extra step at end of copyStage1EstsIntoStage2FixedParams
-//}
+
 AllPairs0TrParam2DegPolyHMM* IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts::bfgsStage2(gsl_vector* initGuess, int maxIters, std::string filename, bool verbose, bool debug) {
-  //std::cout << "HERE starting bfgsStage2" << std::endl;
-  //this->print(stdout);
   IndThenPairs2Stages3TrParam2DegPolyHMM::bfgsStage2(initGuess, maxIters, filename, verbose, debug);
   this->allPairedEstMutCounts = this->getAllPairedEstMutCounts();
   return this->stage2Pairs;

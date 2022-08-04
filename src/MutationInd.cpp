@@ -6,20 +6,16 @@ MutationInd::MutationInd(std::vector<MutationList*>* mutListVec, bool verbose, b
 }
 
 MutationInd::~MutationInd() {
-  //delete this->mutList;
 }
 MutationListContainer* MutationInd::estMutCountsPerBranch(std::vector<std::unordered_map<std::string, std::vector<int>*>*>* chrToViterbiPathMapVec, gsl_vector* initGuess, int maxIters, bool verbose) {
   if(this->hasMutEsts && compareDoubles(0, this->changeInBFGSLoglikelihood)) {
-    //std::cout << "SHORTCUT: MutationInd::estMutCountsPerBranch RETURN" << std::endl;
     return this;
   }
-  //std::cout << "MutationInd::estMutCountsPerBranch calling parent" << std::endl;
   this->hasMutEsts = true;
   return MutationListContainer::estMutCountsPerBranch(chrToViterbiPathMapVec, initGuess, maxIters, verbose);
 }
 
 double MutationInd::getMutCountEst() {
-  //return gsl_vector_get(this->paramsToEst, this->MUTATION_COUNT_START_IDX);
   return this->getMutCountEst(0);
 }
 
@@ -111,7 +107,6 @@ double MutationInd::getMutParamsFromFile(std::string filename, int numExpectedLi
  * calculates l(X) = sum_sites [log(p(data_i | S_i=1) * X/N + p(data_i | S_i=0) * (N-X)/N)]
  */
 double MutationInd::getLogLikelihood() {
-  //std::cout << "MutationInd::getLogLikelihood" << std::endl;
   MutationList* mutList = (*this->mutListVec)[0]; // for convenience
   double totalLl = 0;
   double currLl = 0;
@@ -130,17 +125,12 @@ double MutationInd::getLogLikelihood() {
     prob_s0 = mutList->getLikelihood(currSite, false);
     double prob_s1_norm = prob_s1 / (prob_s1 + prob_s0);
     double prob_s0_norm = prob_s0 / (prob_s1 + prob_s0);
-    //std::cout << "prob_s: " << prob_s1 << ", " << prob_s0 << ", " << x/N << ", " << (N-x)/N << ", x: " << x << std::endl;
-    //std::cout << "prob_s: " << prob_s1 << ", " << prob_s0 << ", " << prob_s1_norm << ", " << prob_s0_norm << ", " << x/N << ", " << (N-x)/N << ", x: " << x << std::endl;
 
     // then sum up and store
-    //currLl = log(prob_s1 * x/N + prob_s0 * (N-x)/N); // P(D|S=1) * X/N + P(D|S=0) * (N-X)/N
     currLl = log(prob_s1_norm * x/N + prob_s0_norm * (N-x)/N); // P(D|S=1) * X/N + P(D|S=0) * (N-X)/N
     if(gsl_isinf(currLl) || gsl_isnan(currLl)) { // inf from prob_s1/prob_s0 log(0), nan from prob_s1_norm/prob_s1_norm 0/0
-      //return GSL_NAN;
       currLl = 0;
     }
-    //std::cout << "currLl: " << currLl << std::endl;
     totalLl += currLl;
   }
   return totalLl;
@@ -149,6 +139,5 @@ double MutationInd::getLogLikelihood() {
 // ex estimated x shouldn't be greater than N
 double MutationInd::getValidOptimParamMax() const {
   return (*this->mutListVec)[0]->coordVec->size();
-  //return std::numeric_limits<int>::max();
 }
 

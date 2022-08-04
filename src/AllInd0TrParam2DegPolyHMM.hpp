@@ -11,7 +11,6 @@
 
 /*
  * This class is for making a collection of HMMs that estimates libs and branches for a given number of tumor cells.
- * //transition params (beta/gamma) are fixed.
  * transition params (beta/lambda) are fixed.
  *
  * Because each cell is represented in exactly one HMM, all cellIdx and hmmIdx variables are the same.
@@ -29,12 +28,6 @@ class AllInd0TrParam2DegPolyHMM : public AllInd3TrParam2DegPolyHMM {
     virtual void makeHMMs();
     virtual void makeHMMs(gsl_vector* meanVarianceCoefVec, gsl_vector* transitionParams);
 
-    //// methods for least squares for solving for Baum Welch estimates. // TODO not impl here since don't think it makes sense to run baum welch on classes that don't allow all variables to vary?
-    //virtual void baumWelchLeastSquares_convertProbToParam(gsl_vector* dest, const gsl_vector* src) const override;
-    //virtual void baumWelchLeastSquares_convertParamToProb(gsl_vector* dest, const gsl_vector* src) const override;
-    //virtual double baumWelchLeastSquares_calcSumSqResid(const gsl_vector* v) override;
-    //virtual void saveBaumWelchEstsIntoParamsToEst(gsl_vector* varsToEst_probSpace, gsl_vector* initGuess) override;
-
   public:
     // constants
 
@@ -42,10 +35,6 @@ class AllInd0TrParam2DegPolyHMM : public AllInd3TrParam2DegPolyHMM {
     virtual ~AllInd0TrParam2DegPolyHMM();
     static AllInd0TrParam2DegPolyHMM* create(std::vector<DepthPair*>* depths, std::vector<std::string>* sampleList, gsl_vector* fixedParams, int maxPloidy);
     // accessors and mutators
-    //virtual void setLibScalingFactor(int cellIdx, double lib);
-    //virtual void setAllLibScalingFactors(double libScalingFactor);
-    //virtual double getLibScalingFactor(int cellIdx) const;
-    //virtual double setAllTransition(gsl_vector* transitionParams) override;
     virtual double setAllBranches(gsl_vector* branches);
     virtual void setParamsToEstFromIthHMM(gsl_vector* params, int hmmIdx) override;
     virtual void setFixedParamsFromIthHMM(gsl_vector* params, int hmmIdx) override;
@@ -56,7 +45,6 @@ class AllInd0TrParam2DegPolyHMM : public AllInd3TrParam2DegPolyHMM {
     virtual void convertParamToProb(gsl_vector* dest, const gsl_vector* src) const override;
     virtual void setSimParamsToEst(gsl_vector* params) override;
     virtual void setSimFixedParams(gsl_vector* params) override;
-    //virtual void miscFunctions() override;
 
     // BFGS
     virtual void setInitGuessNthTime(gsl_vector* initGuess, int iter, int numTotalRuns) const override;
@@ -65,5 +53,4 @@ class AllInd0TrParam2DegPolyHMM : public AllInd3TrParam2DegPolyHMM {
 };
 
 #endif
-
 

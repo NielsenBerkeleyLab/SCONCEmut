@@ -34,7 +34,6 @@ class SelectPairsFixLib0TrParam2DegPolyHMMWithMuts : public SelectPairsFixLib0Tr
     gsl_vector* allIndEstMutCounts;
 
     SelectPairsFixLib0TrParam2DegPolyHMMWithMuts(std::vector<DepthPair*>* depths, std::vector<std::string>* sampleList, std::vector<MutationList*>* mutListVec, gsl_vector* allIndEstMutCounts, gsl_vector* fixedParams, int maxPloidy, int numPairs, int numPairsToSummarize, int ordering, unsigned int seed, gsl_matrix* stage1NearestCellIdxMat, int numBranchesToEst);
-    //virtual void makeHMMPairs(gsl_vector* meanVarianceCoefVec, gsl_vector* transitionParams, bool preallocIntermediates = true) override;
     using AllPairs0TrParam2DegPolyHMM::makeHMMPairs; // unhide parent method of same name https://stackoverflow.com/a/18100999
     virtual void makeOneHMMPair(int i, int j, bool preallocIntermediates = true) override;
 
@@ -43,10 +42,6 @@ class SelectPairsFixLib0TrParam2DegPolyHMMWithMuts : public SelectPairsFixLib0Tr
     virtual ~SelectPairsFixLib0TrParam2DegPolyHMMWithMuts();
     static SelectPairsFixLib0TrParam2DegPolyHMMWithMuts* create(std::vector<DepthPair*>* depths, std::vector<std::string>* sampleList, std::vector<MutationList*>* mutListVec, gsl_vector* allIndEstMutCounts, gsl_vector* fixedParams, int maxPloidy, int numPairs, int numPairsToSummarize, int ordering, unsigned int seed, gsl_matrix* stage1NearestCellIdxMat, gsl_vector* meanVarianceCoefVec, bool preallocIntermediates = true);
 
-    //virtual void print(FILE* stream) override;
-    //virtual void decodeStatSummaryOneCellAcrossPairs(int summaryMethod, int cellNum) override;
-    //virtual SelectPairsFixLib0TrParam2DegPolyHMMWithMuts* bfgs(gsl_vector* initGuess, std::string filename, int maxIters, bool verbose = true, bool debug = false) override;
-    //void resetSkippedParams();
     virtual gsl_vector* getAllPairedEstMutCounts() override;
 };
 

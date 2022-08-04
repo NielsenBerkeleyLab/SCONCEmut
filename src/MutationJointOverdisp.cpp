@@ -32,8 +32,6 @@ double MutationJointOverdisp::getLogLikelihood() {
   return totalLl;
 }
 
-// TODO should probably override saveMutParamsToFile if want to save omega ==> actually probably don't, since mutIndVec stores the same mutList pointers
-
 // no upper limit on param value omega
 double MutationJointOverdisp::getValidOptimParamMax() const {
   return std::numeric_limits<double>::max();

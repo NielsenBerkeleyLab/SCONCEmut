@@ -46,7 +46,6 @@ void SelectPairs0TrParam2DegPolyHMMWithMuts::makeOneHMMPair(int i, int j, bool p
   gsl_vector* currMeanVarCoefVec = gsl_vector_alloc(this->meanVarianceCoefVec->size);
   gsl_vector_memcpy(currMeanVarCoefVec, this->meanVarianceCoefVec);
   hmm->setMeanVarianceFn(currMeanVarCoefVec);
-  //hmm->setTransition(transitionParams); // this vector isn't saved anywhere
   hmm->setLibScalingFactorsToTotalRatio();
   hmm->setAlpha(this->getAlpha());
 

@@ -63,14 +63,9 @@ class IndThenPairs2Stages3TrParam2DegPolyHMM {
 
   public:
     // constants
-    //const int LIB_SIZE_SCALING_FACTOR_START_IDX;
     const int NUM_CELLS;
     const int NUM_SHARED_TRANSITION_PARAMS_TO_EST; // ie. beta, lambda. Does not count branch lengths or lib size scaling factors
-    //const int SHARED_TRANSITION_PROB_START_IDX;
-    //const int BRANCH_LENGTH_START_IDX;
-    //const int NUM_BRANCH_LENGTHS_TO_EST;
     const int MAX_PLOIDY;
-    //const int NUM_PAIRS_STAGE_1;
     const int NUM_PAIRS_STAGE_2;
 
     static const int ORDERING_NEAREST  = 0;
@@ -104,7 +99,6 @@ class IndThenPairs2Stages3TrParam2DegPolyHMM {
 
     // optimization methods
     virtual void setUpInd2Stages();
-    //virtual void setUpInd2Stages(gsl_vector* meanVarianceCoefVec);
     virtual void copyStage1EstsIntoStage2FixedParams(gsl_vector* stage2FixedParams, gsl_vector* stage2InitGuess, gsl_vector* indEstParams, int numStage2LibsToFix);
     virtual void setUpAllPairsBFGS(gsl_vector* fixedParams, gsl_vector* initGuess, gsl_vector* meanVarianceCoefVec, bool fixLib = true, bool preallocIntermediates = false);
     virtual void setUpSelectPairsBFGS(gsl_vector* fixedParams, gsl_vector* initGuess, int numPairsToSummarize, int ordering, int seed, gsl_vector* meanVarianceCoefVec, bool fixLib = true, bool preallocIntermediates = false);
@@ -127,7 +121,6 @@ class IndThenPairs2Stages3TrParam2DegPolyHMM {
     void saveAllSummaryDecodedCNAToBed(std::string filename);
 
     // methods to read intermediate results
-    //gsl_vector* getIndOptimParamsToEstSummaryFromIndvFiles(std::string tumorFileList, std::string sconceEstimatesPath, int numExpectedLines) const;
     void getIndOptimParamsToEstFromIndvFiles(std::string tumorFileList, std::string sconceEstimatesPath, int numExpectedLines, gsl_vector* meanVarianceCoefVec) const;
     gsl_vector* getIndOptimParamsToEstSummaryFromJointFile(std::string sconceEstimatesJointFile, int numExpectedLines) const;
     void getPairedOptimParamsToEstFromFiles(std::string pairedEstimatesPath, int numExpectedLinesPerFile);

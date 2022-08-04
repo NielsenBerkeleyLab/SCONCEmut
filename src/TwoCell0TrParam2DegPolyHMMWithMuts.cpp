@@ -4,7 +4,6 @@ TwoCell0TrParam2DegPolyHMMWithMuts::TwoCell0TrParam2DegPolyHMMWithMuts(std::vect
 }
 
 TwoCell0TrParam2DegPolyHMMWithMuts::TwoCell0TrParam2DegPolyHMMWithMuts(std::vector<DepthPair*>* depths, MutationPair* mutPair, gsl_vector* fixedParams, int maxPloidy, int numTrParamsToEst, int numFixedTrParams, int numFixedLibs, int numBranches, bool preallocIntermediates) : TwoCell0TrParam2DegPolyHMM(depths, fixedParams, maxPloidy, numTrParamsToEst, numFixedTrParams, numFixedLibs, numBranches, preallocIntermediates) {
-  //this->cnaToMutRateMu = 1;
   this->mutPair = mutPair;
 }
 TwoCell0TrParam2DegPolyHMMWithMuts::~TwoCell0TrParam2DegPolyHMMWithMuts() {
@@ -12,11 +11,9 @@ TwoCell0TrParam2DegPolyHMMWithMuts::~TwoCell0TrParam2DegPolyHMMWithMuts() {
 }
 
 double TwoCell0TrParam2DegPolyHMMWithMuts::getCnaToMutRateMu() {
-  //return this->cnaToMutRateMu;
   return gsl_vector_get(this->fixedParams, this->FIXED_MUTATION_PARAM_START_IDX + 0);
 }
 void TwoCell0TrParam2DegPolyHMMWithMuts::setCnaToMutRateMu(double rate) {
-  //this->cnaToMutRateMu = rate;
   gsl_vector_set(this->fixedParams, this->FIXED_MUTATION_PARAM_START_IDX + 0, rate);
 }
 TwoCell0TrParam2DegPolyHMMWithMuts* TwoCell0TrParam2DegPolyHMMWithMuts::bfgs(gsl_vector* initGuess, int maxIters, bool verbose, bool debug) {

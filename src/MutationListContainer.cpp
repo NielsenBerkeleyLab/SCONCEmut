@@ -35,7 +35,6 @@ MutationListContainer::~MutationListContainer() {
 
 // chrToViterbiPathMapVec is a cellIdx:[chr:vector of viterbi decoded paths] map
 MutationListContainer* MutationListContainer::estMutCountsPerBranch(std::vector<std::unordered_map<std::string, std::vector<int>*>*>* chrToViterbiPathMapVec, gsl_vector* initGuessParam, int maxIters, bool verbose) {
-  //std::cout << "MutationListContainer::estMutCountsPerBranch" << std::endl;
   // update MutationLists with these viterbi decodings
   if(chrToViterbiPathMapVec != nullptr) {
     this->setAllCoordSconceCNMap(chrToViterbiPathMapVec);
@@ -46,7 +45,6 @@ MutationListContainer* MutationListContainer::estMutCountsPerBranch(std::vector<
   if(initGuessParam == nullptr) {
     initGuess = gsl_vector_alloc(this->getNumParamsToEst());
     gsl_vector_memcpy(initGuess, this->paramsToEst);
-    //gsl_vector_set_all(initGuess, 150);
   }
   else {
     initGuess = initGuessParam;
@@ -63,9 +61,6 @@ MutationListContainer* MutationListContainer::estMutCountsPerBranch(std::vector<
   this->bfgs(initGuess, maxIters, verbose, this->gradientDebug);
   // if no improvement in ll && was given a new initGuess, then new initGuess failed
   if(compareDoubles(0.0, this->changeInBFGSLoglikelihood) && initGuessParam != nullptr) {
-  //if(!this->optimSuccess) {
-    //printRowVector(initGuess);
-    //gsl_vector_set_all(initGuess, 100);
     double maxMutCount = 0;
     double currMutCount = 0;
     for(int i = 0; i < this->NUM_MUTATION_COUNTS_TO_EST; i++) {
@@ -75,31 +70,22 @@ MutationListContainer* MutationListContainer::estMutCountsPerBranch(std::vector<
       }
     }
     gsl_vector_set_all(initGuess, maxMutCount * 2.0 / 3.0);
-    //std::cout << "WARNING: MutationListContainer::estMutCountsPerBranch failed, retrying with initGuess:" << std::endl;
-    //printRowVector(initGuess);
     if(verbose) {
       std::lock_guard<std::mutex> lock(Optimizable::mtx); // from https://stackoverflow.com/a/18277334
       std::cout << "WARNING: MutationListContainer::estMutCountsPerBranch failed, retrying with initGuess:" << std::endl;
       printRowVector(initGuess);
     }
     this->bfgs(initGuess, maxIters, verbose, this->gradientDebug);
-  //gsl_vector_memcpy(initGuess, this->initGuessCopyBeforeBFGS);
-    //std::cout << this->changeInBFGSLoglikelihood << std::endl;
   }
-  //if(!this->optimSuccess) {
   // if no improvement in ll && was given a new initGuess, then new initGuess failed
   if(compareDoubles(0.0, this->changeInBFGSLoglikelihood) && initGuessParam != nullptr) {
-    //gsl_vector_set_all(initGuess, 50);
     gsl_vector_set_all(initGuess, 3);
-    //std::cout << "WARNING: MutationListContainer::estMutCountsPerBranch failed, retrying with initGuess:" << std::endl;
-    //printRowVector(initGuess);
     if(verbose) {
       std::lock_guard<std::mutex> lock(Optimizable::mtx); // from https://stackoverflow.com/a/18277334
       std::cout << "WARNING: MutationListContainer::estMutCountsPerBranch failed, retrying with initGuess:" << std::endl;
       printRowVector(initGuess);
     }
     this->bfgs(initGuess, maxIters, verbose, this->gradientDebug);
-    //std::cout << this->changeInBFGSLoglikelihood << std::endl;
   }
   // if no improvement in ll && was given a new initGuess, then new initGuess (and all retries) failed
   if(compareDoubles(0.0, this->changeInBFGSLoglikelihood) && initGuessParam != nullptr) {
@@ -110,7 +96,6 @@ MutationListContainer* MutationListContainer::estMutCountsPerBranch(std::vector<
       std::cout << "Reseting to: ";
       printRowVector(initGuess);
     }
-    //gsl_vector_memcpy(initGuess, this->initGuessCopyBeforeBFGS);
   }
   gsl_vector_free(initGuessCopy);
   if(initGuess != initGuessParam) {
@@ -123,9 +108,7 @@ MutationListContainer* MutationListContainer::estMutCountsPerBranch(std::vector<
 void MutationListContainer::setAllCoordSconceCNMap(std::vector<std::unordered_map<std::string, std::vector<int>*>*>* chrToViterbiPathMapVec) {
   // update MutationLists with these viterbi decodings
   for(unsigned int mutListIdx = 0; mutListIdx < this->mutListVec->size(); mutListIdx++) {
-    //std::cout << "MutationListContainer::setAllCoordSconceCNMap mutListIdx: " << mutListIdx << std::endl;
     (*this->mutListVec)[mutListIdx]->setCoordSconceCNMap((*chrToViterbiPathMapVec)[mutListIdx]);
-    //(*this->mutListVec)[mutListIdx]->print(stdout);
   }
 }
 
@@ -269,7 +252,6 @@ Optimizable* MutationListContainer::bfgs(gsl_vector* initGuess, int maxIters, bo
   MutationListContainer* bestGuessMutPair = this;
   gsl_vector* initGuessAsParams = gsl_vector_alloc(initGuess->size);
   bestGuessMutPair->convertProbToParam(initGuessAsParams, initGuess);
-  //Optimizable::bfgs(initGuessAsParams, bestGuessMutPair, maxIters, verbose, debug);
   Optimizable::simplex(initGuessAsParams, bestGuessMutPair, maxIters, verbose, debug);
   gsl_vector_free(initGuessAsParams);
   return bestGuessMutPair;
@@ -295,23 +277,18 @@ double MutationListContainer::checkOptimProbValidity(gsl_vector* probs) const {
   double validMax = this->getValidOptimParamMax();
   for(unsigned int i = 0; i < probs->size; i++) {
     curr = gsl_vector_get(probs, i);
-    //if(curr < 1e-2) {
     if(curr < 0) {
-      //std::cout << "NAN: curr " << curr << " < 1e-2" << std::endl;
       return GSL_NAN;
     }
     if(curr > validMax) {
-      //std::cout << "NAN: curr " << curr << " > " << validMax << std::endl;
       return GSL_NAN;
     }
     if(gsl_isnan(curr)) {
-      //std::cout << "NAN: curr is nan" << std::endl;
       return GSL_NAN;
     }
   }
   double paramSum = gsl_blas_dasum(probs);
   if(paramSum > validMax) {
-    //std::cout << "NAN: paramSum " << paramSum << " > " << validMax << std::endl;
     return GSL_NAN;
   }
   return 0;

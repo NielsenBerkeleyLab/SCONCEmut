@@ -23,8 +23,6 @@ void AllPairsFixLib0TrParam2DegPolyHMMWithMuts::makeOneHMMPair(int i, int j, boo
   if(this->allIndEstMutCounts != nullptr) {
     // similar to IndThenPairs2Stages3TrParam2DegPolyHMM::copyStage1EstsIntoStage2FixedParams tree branch estimate setting
     currInitGuess = gsl_vector_alloc(3);
-    //std::cout << "makeOneHMMPair i " << i << ", j " << j << std::endl;
-    //printColVector(this->allIndEstMutCounts);
     double xi = gsl_vector_get(this->allIndEstMutCounts, i);
     double xj = gsl_vector_get(this->allIndEstMutCounts, j);
     double x1Est = std::min(xi, xj) / 2;
@@ -36,7 +34,6 @@ void AllPairsFixLib0TrParam2DegPolyHMMWithMuts::makeOneHMMPair(int i, int j, boo
   }
   if(this->verbose) {
     std::lock_guard<std::mutex> lock(Optimizable::mtx); // from https://stackoverflow.com/a/18277334
-    //std::cout << "\n#####\nCalling BFGS for MutationPair initialization (paired mutation counts) for HMM " << hmmIdx << "(" << (*this->sampleList)[i] << ", " << (*this->sampleList)[j] << "):" << std::endl;
     std::cout << "\n#####\nCalling SIMPLEX for MutationPair initialization (paired mutation counts) for HMM " << hmmIdx << "(" << (*this->sampleList)[i] << ", " << (*this->sampleList)[j] << "):" << std::endl;
     printColVector(currInitGuess);
   }
@@ -73,24 +70,6 @@ void AllPairsFixLib0TrParam2DegPolyHMMWithMuts::makeOneHMMPair(int i, int j, boo
 AllPairsFixLib0TrParam2DegPolyHMMWithMuts::~AllPairsFixLib0TrParam2DegPolyHMMWithMuts() {
   // TODO
 }
-
-///*
-// * function to estimate mutation counts X1/X2/X3 for each MutationPair ==> actually, moved to MutationPair ctor
-// */
-//void AllPairsFixLib0TrParam2DegPolyHMMWithMuts::estimateAllMutationPairMutCounts(std::string filename) {
-//  // for each MutationPair
-//  gsl_vector* initGuess = gsl_vector_alloc(3);
-//  for(unsigned int mutPairIdx = 0; mutPairIdx < this->mutPairVec->size; mutPairIdx++) {
-//    // nullptr guard
-//    if((*this->mutPairVec)[mutPairIdx] == nullptr) {
-//      continue;
-//    }
-//    // call bfgs
-//    (*this->mutPairVec)[mutPairIdx]->bfgs(
-//  }
-//  gsl_vector_free(initGuess);
-//}
-//
 
 gsl_vector* AllPairsFixLib0TrParam2DegPolyHMMWithMuts::getAllPairedEstMutCounts() {
   gsl_vector* allPairedEstMutCounts = gsl_vector_alloc(this->NUM_BRANCH_LENGTHS_TO_EST);

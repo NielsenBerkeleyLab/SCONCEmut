@@ -16,12 +16,10 @@
  * estimates its own branch lengths
  *
  * this->paramsToEst = [t1_cell0_1, t2_cell0_1, t3_cell0_1, t1_cell0_2, t2_cell0_2, t3_cell0_2, ..., t3_cell(N-1)_N]
- * //this->fixedParams = [lib0, lib1, ..., libN, alpha, beta, gamma]
  * this->fixedParams = [lib0, lib1, ..., libN, alpha, beta, lambda]
  */
 class AllPairsFixLib0TrParam2DegPolyHMM : public AllPairs0TrParam2DegPolyHMM {
   private:
-    //AllPairsFixLib0TrParam2DegPolyHMM(const AllPairsFixLib0TrParam2DegPolyHMM& otherAllPairsHMM);
 
   protected:
     std::vector<bool>* shouldCallBFGSOnHmmIdx;
@@ -30,7 +28,6 @@ class AllPairsFixLib0TrParam2DegPolyHMM : public AllPairs0TrParam2DegPolyHMM {
     virtual void makeHMMPairs(gsl_vector* meanVarianceCoefVec, gsl_vector* transitionParams, bool preallocIntermediates = true) override;
     using AllPairs0TrParam2DegPolyHMM::makeHMMPairs; // unhide parent method of same name https://stackoverflow.com/a/18100999
     virtual void makeOneHMMPair(int i, int j, bool preallocIntermediates = true) override;
-    //virtual HMM* copyHMM(HMM* hmm) const override;
     virtual void callIndvHMMBFGS(int hmmIdx, gsl_vector* initGuess, std::string filename, int maxIters, bool verbose, bool debug);
 
   public:
@@ -40,7 +37,6 @@ class AllPairsFixLib0TrParam2DegPolyHMM : public AllPairs0TrParam2DegPolyHMM {
     static AllPairsFixLib0TrParam2DegPolyHMM* create(const AllPairsFixLib0TrParam2DegPolyHMM& otherAllPairsHMM);
 
     // accessors and mutators
-    //virtual void setLibScalingFactor(int cellNum, double libScalingFactor) override;
     virtual void setLibScalingFactors(int cell0Idx, int cell1Idx, double lib0, double lib1);
     virtual double getLibScalingFactor(int cellNum) const override;
     virtual void setAllLibScalingFactors(int cellNumInPair, double libScalingFactor) override;
@@ -49,7 +45,6 @@ class AllPairsFixLib0TrParam2DegPolyHMM : public AllPairs0TrParam2DegPolyHMM {
 
     // override Optimizable methods
     virtual double setParamsToEst(gsl_vector* params) override;
-    //AllPairsFixLib0TrParam2DegPolyHMM* bfgs(gsl_vector* initGuess, int maxIters, bool verbose = true, bool debug = false) override;
     virtual AllPairsFixLib0TrParam2DegPolyHMM* bfgs(gsl_vector* initGuess, std::string filename, int maxIters, bool verbose = true, bool debug = false) override;
 };
 

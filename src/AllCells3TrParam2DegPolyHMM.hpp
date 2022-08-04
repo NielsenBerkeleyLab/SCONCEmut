@@ -30,8 +30,6 @@ class AllCells3TrParam2DegPolyHMM : public Optimizable {
     gsl_vector* bwGradientIntermediateVec;
   protected:
     // protected ctors
-    //AllCells3TrParam2DegPolyHMM(std::vector<DepthPair*>* depths, std::vector<std::string>* sampleList, int maxPloidy);
-    //AllCells3TrParam2DegPolyHMM(const AllCells3TrParam2DegPolyHMM& otherAllCells3TrParam2DegPolyHMM);
     AllCells3TrParam2DegPolyHMM(std::vector<DepthPair*>* depths, std::vector<std::string>* sampleList, gsl_vector* fixedParams, int maxPloidy, int numSharedTrParamsToEst, int numFixedTrParams, int numFixedLibs, int numHMMs, int numBranchesToEst);
 
     // member variables
@@ -80,8 +78,6 @@ class AllCells3TrParam2DegPolyHMM : public Optimizable {
     void setSampleList(std::vector<std::string>* sampleList);
     virtual std::vector<gsl_vector*>* getBaumWelchParamResults() const;
     virtual void setBaumWelchParamResults(std::vector<gsl_vector*>* paramResults);
-    /*virtual void setLibScalingFactors(int cell0Idx, int cell1Idx, double lib0, double lib1);
-    virtual void setAllLibScalingFactors(int cellNumInPair, double libScalingFactor);*/
     virtual double getLibScalingFactor(int cellNum) const = 0;
     virtual double getAlpha() const;
     virtual void setAlpha(double alpha);
@@ -109,7 +105,6 @@ class AllCells3TrParam2DegPolyHMM : public Optimizable {
     virtual void setInitGuessNthTime(gsl_vector* initGuess, int iter, int numTotalRuns) const override = 0;
     virtual void setBaumWelchInitGuess(gsl_vector* initGuess, int numBWIters, int numLibStarts = 3, double libStartValue = 1.0, bool verbose = true, bool debug = false);
     AllCells3TrParam2DegPolyHMM* bfgs(gsl_vector* initGuess, int maxIters, bool verbose = true, bool debug = false) override;
-    //double runForwardAlg();
 
     // methods to save results
     void viterbiDecodeAll();

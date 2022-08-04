@@ -22,7 +22,6 @@ void SelectPairsFixLib0TrParam2DegPolyHMMWithMuts::makeOneHMMPair(int i, int j, 
   currMutLists->push_back((*this->mutListVec)[j]);
   if(this->verbose) {
     std::lock_guard<std::mutex> lock(Optimizable::mtx); // from https://stackoverflow.com/a/18277334
-    //std::cout << "\n#####\nCalling BFGS for MutationPair initialization (paired mutation counts) for HMM " << hmmIdx << "(" << (*this->sampleList)[i] << ", " << (*this->sampleList)[j] << "):" << std::endl;
     std::cout << "\n#####\nCalling SIMPLEX for MutationPair initialization (paired mutation counts) for HMM " << hmmIdx << "(" << (*this->sampleList)[i] << ", " << (*this->sampleList)[j] << "):" << std::endl;
   }
   gsl_vector* currInitGuess = nullptr;

@@ -33,23 +33,14 @@ class TwoCellFixLib0TrParam2DegPolyHMMWithMuts : public TwoCellFixLib0TrParam2De
     double getCnaToMutRateMu();
     void setCnaToMutRateMu(double rate);
 
-    // functions that depend on numbering and ordering of transition params
-    //virtual void convertProbToParam(gsl_vector* dest, const gsl_vector* src) const override;
-    //virtual void convertParamToProb(gsl_vector* dest, const gsl_vector* src) const override;
-
     // functions that depend on model
     virtual TwoCellFixLib0TrParam2DegPolyHMMWithMuts* bfgs(gsl_vector* initGuess, int maxIters, bool verbose = true, bool debug = false) override;
     virtual void print(FILE* stream) override;
     virtual double getLogLikelihood() override;
-    //virtual void simulate() override;
-    //virtual void simulate(int seed) override;
 
-    //virtual void miscFunctions() override;
     virtual double getMutLogLikelihood();
     virtual void estMutCountsPerBranch();
     virtual void saveParamEstimates(std::string filename) const override;
-
-    //virtual double setParamsToEst(gsl_vector* params) override;
 };
 
 #endif

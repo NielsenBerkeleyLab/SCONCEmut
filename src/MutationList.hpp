@@ -33,7 +33,6 @@ class MutationList {
     std::unordered_map<std::string, int>* coordWindowLineNumMap; // "chr:coord": line number relative to genome/entire depth file, 1 based (ie matches bed file exactly); for debugging
     std::unordered_map<std::string, int>* coordSconceCNMap; // "chr:coord": copy number estimate from sconce
     std::unordered_map<std::string, double>* coordBinomCoefMap; // "chr:coord": n choose numAlt binomial coefficient
-    //std::unordered_map<std::string, long double>* coordBinomCoefMap; // "chr:coord": n choose numAlt binomial coefficient
     std::vector<double>* logCNvec; // cn: log(1/CN)
 
     // constructors and destructor

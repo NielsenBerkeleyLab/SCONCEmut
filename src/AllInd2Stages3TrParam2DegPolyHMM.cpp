@@ -1,12 +1,10 @@
 #include "AllInd2Stages3TrParam2DegPolyHMM.hpp"
 
 // ctors and destructors
-//AllInd2Stages3TrParam2DegPolyHMM::AllInd2Stages3TrParam2DegPolyHMM(std::vector<DepthPair*>* depths, std::vector<std::string>* sampleList, int maxPloidy, int numPairsStage1, int numPairsStage2, bool gradientDebug) :
 AllInd2Stages3TrParam2DegPolyHMM::AllInd2Stages3TrParam2DegPolyHMM(std::vector<DepthPair*>* depths, std::vector<std::string>* sampleList, int maxPloidy, bool gradientDebug) :
                                         NUM_CELLS(depths->size()),
                                         NUM_SHARED_TRANSITION_PARAMS_TO_EST(2), // beta, lambda
                                         MAX_PLOIDY(maxPloidy) {
-  //std::cout << "in AllInd2Stages3TrParam2DegPolyHMM ctor" << std::endl;
 
   this->depthsVec = depths;
   this->sampleList = sampleList;
@@ -195,26 +193,12 @@ void AllInd2Stages3TrParam2DegPolyHMM::copyBaumWelchIntoBFGSInitGuess(gsl_vector
 // methods to save results
 void AllInd2Stages3TrParam2DegPolyHMM::viterbiDecode() {
   this->bfgsAllInd->viterbiDecodeAll();
-  //if(this->bfgsAllInd == nullptr) {
-  //  this->bwAllInd->viterbiDecodeAll(); // impMod
-  //}
-  //else {
-  //  this->bfgsAllInd->viterbiDecodeAll();
-  //}
 }
 void AllInd2Stages3TrParam2DegPolyHMM::saveViterbiDecodedCNA(std::string filename) {
   this->bfgsAllInd->saveAllViterbiDecodedCNA(filename);
 }
 void AllInd2Stages3TrParam2DegPolyHMM::saveCNAToBed(std::string filename) {
   this->bfgsAllInd->saveAllCNAToBed(filename);
-  //if(this->bfgsAllInd == nullptr) {
-  //  std::cout << "AllInd2Stages3TrParam2DegPolyHMM::saveViterbiDecodedCNA ==> bwAllInd" << std::endl;
-  //  this->bwAllInd->saveAllCNAToBed(filename); // impMod
-  //}
-  //else {
-  //  std::cout << "AllInd2Stages3TrParam2DegPolyHMM::saveViterbiDecodedCNA ==> bfgsAllInd" << std::endl;
-  //  this->bfgsAllInd->saveAllCNAToBed(filename);
-  //}
 }
 
 void AllInd2Stages3TrParam2DegPolyHMM::saveParamEstimates(int cellIdx, std::string filename) {

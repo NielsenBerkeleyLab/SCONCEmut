@@ -9,7 +9,6 @@
  * alpha, beta, gamma are also all fixed
  *
  * this->paramsToEst = [t1, t2, t3]
- * //this->fixedParams = [lib0, lib1, alpha, beta, gamma]
  * this->fixedParams = [lib0, lib1, alpha, beta, lambda]
  */
 class TwoCellFixLib0TrParam2DegPolyHMM : public TwoCell0TrParam2DegPolyHMM {
@@ -23,7 +22,6 @@ class TwoCellFixLib0TrParam2DegPolyHMM : public TwoCell0TrParam2DegPolyHMM {
   public:
     // constructors and destructor
     TwoCellFixLib0TrParam2DegPolyHMM(std::vector<DepthPair*>* depths, gsl_vector* fixedParams, int maxPloidy, bool preallocIntermediates = true);
-    //TwoCellFixLib0TrParam2DegPolyHMM(const TwoCellFixLib0TrParam2DegPolyHMM& otherHMM);
     virtual ~TwoCellFixLib0TrParam2DegPolyHMM();
 
     // accessors and mutators
@@ -39,12 +37,8 @@ class TwoCellFixLib0TrParam2DegPolyHMM : public TwoCell0TrParam2DegPolyHMM {
 
     // functions that depend on model
     virtual TwoCellFixLib0TrParam2DegPolyHMM* bfgs(gsl_vector* initGuess, int maxIters, bool verbose = true, bool debug = false) override;
-    //virtual void simulate() override;
-    //virtual void simulate(int seed) override;
 
     virtual void miscFunctions() override;
-
-    //virtual double setParamsToEst(gsl_vector* params) override;
 };
 
 #endif

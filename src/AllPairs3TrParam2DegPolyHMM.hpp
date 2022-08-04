@@ -22,7 +22,6 @@
  * in BFGS) parallelizable. So, this class will hold a collection of TwoCell* HMMs where at each iteration
  * of BFGS, the appropriate parameters are set
  *
- * //this->paramsToEst = [lib0, lib1, ..., libN, beta, gamma, t1_cell0_1, t2_cell0_1, t3_cell0_1, t1_cell0_2, t2_cell0_2, t3_cell0_2, ..., t3_cell(N-1)_N]
  * this->paramsToEst = [lib0, lib1, ..., libN, beta, lambda, t1_cell0_1, t2_cell0_1, t3_cell0_1, t1_cell0_2, t2_cell0_2, t3_cell0_2, ..., t3_cell(N-1)_N]
  * this->fixedParams = [alpha]
  */

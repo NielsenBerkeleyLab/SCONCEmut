@@ -21,11 +21,7 @@ void SelectPairsFixLib0TrParam2DegPolyHMM::makeHMMPairs(gsl_vector* meanVariance
     (*this->shouldCallBFGSOnHmmIdx)[hmmIdx] = false;
   }
 
-  //std::vector<DepthPair*>* currDepths = nullptr;
-  //gsl_vector* currMeanVarCoefVec = nullptr; // make them all have their own copies of this vector
-  //gsl_vector* currFixedParams = nullptr;
   int hmmIdx = 0;
-  //int refCell = 0; // refCell and nearestCell do not change
   int nearestCell = 0; // nearestCell does not change
   int leftCell = 0; // leftCell and rightCell might swap
   int rightCell = 0;
@@ -39,8 +35,6 @@ void SelectPairsFixLib0TrParam2DegPolyHMM::makeHMMPairs(gsl_vector* meanVariance
   }
 
   // for each cell
-  //std::cout << "depths size: " << this->depthsVec->size() << ", (int) depths size: " << (int) this->depthsVec->size() << std::endl;
-  //std::cout << "nearestCellMat size2: " << this->stage1NearestCellIdxMat->size2 << ", (int) nearestCellMat size2: " << (int) this->stage1NearestCellIdxMat->size2 << std::endl;
   bool atLeastOneHmmCreated = false;
   for(int i = 0; i < (int) this->depthsVec->size(); i++) {
     // regen a random ordering if necessary
@@ -69,14 +63,7 @@ void SelectPairsFixLib0TrParam2DegPolyHMM::makeHMMPairs(gsl_vector* meanVariance
         leftCell = rightCell;
         rightCell = swap;
       }
-      //if(refCell > nearestCell) {
-      //  swap = refCell;
-      //  refCell = nearestCell;
-      //  nearestCell = swap;
-      //}
-      //hmmIdx = this->getHMMIdxFromCellPair(refCell, nearestCell);
       hmmIdx = this->getHMMIdxFromCellPair(leftCell, rightCell);
-      //std::cout << "row: " << i << ", refCell: " << refCell << ", nearestCellIdx: " << nearestCellIdx << ", nearestCell: " << nearestCell << ", hmmIdx: " << hmmIdx << std::endl;
       this->storeHMMIdxForCell(i, hmmIdx);
       (*this->shouldCallBFGSOnHmmIdx)[hmmIdx] = true;
 
@@ -88,43 +75,10 @@ void SelectPairsFixLib0TrParam2DegPolyHMM::makeHMMPairs(gsl_vector* meanVariance
       // if preallocating intermediates, set it up
       else if(preallocIntermediates) {
         if((*this->hmmVec)[hmmIdx] != nullptr) {
-          //std::cout << "already exists, continue" << std::endl;
           continue;
         }
         this->makeOneHMMPair(leftCell, rightCell, preallocIntermediates);
       }
-
-      //currDepths = new std::vector<DepthPair*>();
-      ////currDepths->push_back((*this->depthsVec)[refCell]);
-      ////currDepths->push_back((*this->depthsVec)[nearestCell]);
-      //currDepths->push_back((*this->depthsVec)[leftCell]);
-      //currDepths->push_back((*this->depthsVec)[rightCell]);
-
-      //currFixedParams = gsl_vector_alloc(2 + 3); // 2 libs, alpha/beta/lambda
-      //// set libs
-      ////gsl_vector_set(currFixedParams, 0, gsl_vector_get(this->fixedParams, this->LIB_SIZE_SCALING_FACTOR_START_IDX + i));
-      ////gsl_vector_set(currFixedParams, 1, gsl_vector_get(this->fixedParams, this->LIB_SIZE_SCALING_FACTOR_START_IDX + nearestCell));
-      //gsl_vector_set(currFixedParams, 0, gsl_vector_get(this->fixedParams, this->LIB_SIZE_SCALING_FACTOR_START_IDX + leftCell));
-      //gsl_vector_set(currFixedParams, 1, gsl_vector_get(this->fixedParams, this->LIB_SIZE_SCALING_FACTOR_START_IDX + rightCell));
-
-      //// set shared transition params
-      //gsl_vector_set(currFixedParams, 2, gsl_vector_get(this->fixedParams, this->FIXED_TRANSITION_PROB_START_IDX + 0)); // alpha
-      //gsl_vector_set(currFixedParams, 3, gsl_vector_get(this->fixedParams, this->FIXED_TRANSITION_PROB_START_IDX + 1)); // beta
-      //gsl_vector_set(currFixedParams, 4, gsl_vector_get(this->fixedParams, this->FIXED_TRANSITION_PROB_START_IDX + 2)); // lambda
-
-      //TwoCellFixLib0TrParam2DegPolyHMM* hmm = new TwoCellFixLib0TrParam2DegPolyHMM(currDepths, currFixedParams, this->getKploidy(), preallocIntermediates);
-      //(*this->hmmVec)[hmmIdx] = hmm;
-
-      //// do rest of HMM set up (usually happens in main.cpp)
-      //currMeanVarCoefVec = gsl_vector_alloc(meanVarianceCoefVec->size);
-      //gsl_vector_memcpy(currMeanVarCoefVec, meanVarianceCoefVec);
-      //hmm->setMeanVarianceFn(currMeanVarCoefVec);
-      //hmm->setTransition(transitionParams); // this vector isn't saved anywhere
-      //hmm->setAlpha(this->getAlpha());
-
-      ////this->setLibScalingFactors(refCell, nearestCell, hmm->getLibScalingFactor(0), hmm->getLibScalingFactor(1));
-      //this->setLibScalingFactors(leftCell, rightCell, hmm->getLibScalingFactor(0), hmm->getLibScalingFactor(1));
-      ////this->storeHMMIdxForCells(refCell, nearestCell, hmmIdx);
     }
   }
   delete randomOrdering;
@@ -145,7 +99,6 @@ void SelectPairsFixLib0TrParam2DegPolyHMM::print(FILE* stream) {
 
 // override specifically so can call resetSkippedParams
 SelectPairsFixLib0TrParam2DegPolyHMM* SelectPairsFixLib0TrParam2DegPolyHMM::bfgs(gsl_vector* initGuess, std::string filename, int maxIters, bool verbose, bool debug) {
-  //std::cout << "SelectPairsFixLib0TrParam2DegPolyHMM::bfgs" << std::endl;
   SelectPairsFixLib0TrParam2DegPolyHMM* bestGuess = (SelectPairsFixLib0TrParam2DegPolyHMM*) AllPairsFixLib0TrParam2DegPolyHMM::bfgs(initGuess, filename, maxIters, verbose, debug);
   bestGuess->resetSkippedParams();
   return bestGuess;
@@ -155,7 +108,6 @@ SelectPairsFixLib0TrParam2DegPolyHMM* SelectPairsFixLib0TrParam2DegPolyHMM::bfgs
  * function to reset values in paramsToEst that weren't actually estimated. that is, there wasn't an HMM corresponding to those branch lengths, so setting to -1 to be clear they weren't set by BFGS estimation. TODO perhaps don't reset, in case want to keep bw+ls ests?
  */
 void SelectPairsFixLib0TrParam2DegPolyHMM::resetSkippedParams() {
-  //std::cout << "SelectPairsFixLib0TrParam2DegPolyHMM::resetSkippedParams" << std::endl;
   for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
     if((*this->hmmVec)[hmmIdx] == nullptr) {
       gsl_vector_set(this->paramsToEst, this->BRANCH_LENGTH_START_IDX + 3 * hmmIdx + 0, -1); // t1

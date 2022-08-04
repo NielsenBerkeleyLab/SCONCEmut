@@ -8,15 +8,7 @@
 #include <gsl/gsl_sf_exp.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_permutation.h>
-// http://www.boost.org/doc/libs/1_67_0/libs/math/doc/html/math_toolkit/dist_ref/dists/negative_binomial_dist.html
-// http://www.boost.org/doc/libs/1_67_0/libs/math/doc/html/math_toolkit/dist_ref/dists/poisson_dist.html
 #include <boost/math/distributions.hpp>
-//#include <boost/random.hpp>
-//#include <boost/random/uniform_real.hpp>
-//#include <boost/random/variate_generator.hpp>
-//// https://www.boost.org/doc/libs/1_70_0/libs/random/example/random_demo.cpp
-//// This is a typedef for a random number generator. Try boost::mt19937 or boost::ecuyer1988 instead of boost::minstd_rand
-//typedef boost::minstd_rand base_generator_type;
 
 #include <iostream>
 #include <string>
@@ -49,13 +41,10 @@ class HMM : public Optimizable {
     // member variables
     std::vector<DepthPair*>* depths;
     std::vector<std::string>* states; // ploidy, from 0[,0] to maxPloidy+1[,maxPloidy+1]
-    //std::vector<std::string>* adjBinLabels; // (ploidy,ploidy) pairs for adjacent, from (0,0) to (maxPloidy+1,maxPloidy+1)
-    //std::set<int>* alphabet;
     int maxObservedDepth;
     gsl_matrix* transition;
     gsl_vector* initProb;
     gsl_vector* meanVarianceCoefVec; // intercept, slope (first order), second order coef, ...
-    //std::vector<std::vector<std::string*>*>* transitionStrings;
     int maxNumBFGSStarts;
 
     std::vector<std::unordered_map<std::string, std::vector<int>*>*>* chrToViterbiPathMapVec; // cellIdx:[chr:vector of viterbi decoded paths]; assigned after viterbiDecode() is called in the HMM
@@ -77,8 +66,6 @@ class HMM : public Optimizable {
     gsl_vector* nextBackwardCol;
     gsl_vector* currBackwardCol;
     gsl_matrix* transitionTranspose;
-    //gsl_matrix* numTransitionsMat;
-    //gsl_vector* extractedTrBranchParams; // used in setTransition to pull out just transition params and branches
 
     // used for eigenvalue/eigenvector calculations for finding steady state dist
     gsl_vector_complex* ssEval;
@@ -95,15 +82,10 @@ class HMM : public Optimizable {
     gsl_permutation* ratePerm;
     gsl_matrix* rateInverseMat;
 
-    //std::vector<double>* diploidDepthPloidyPreCalc; // vec of ploidy * diploidDepth / 2. used to speed up getEmissionProb calcs
-    //void fillDiploidDepthPloidyPreCalc();
-
     // constructors (protected so only derived classes can call)
     HMM(std::vector<DepthPair*>* depths, gsl_vector* fixedParams, int numTransitionParamsToEst, int numCells, int numBranches, int maxPloidy, int numFixedTrParams, int numFixedLibs, bool preallocIntermediates = true);
-    //HMM(const HMM& otherHMM);
 
     // protected helper methods
-    //void bfgs(gsl_vector* initGuess, HMM* bestGuessHMM, bool verbose = true) const; // bestGuessHMM is the dest HMM to copy into; should be specific to the class
     int getRandStateIdx(double p, int fromStateIdx) const; // helper method to get a state idx according to prob p
     int getRandStateIdx(double p, gsl_vector* probVec) const;
     double setTimeDepMatrixP(gsl_matrix* destMat, double time);
@@ -141,16 +123,12 @@ class HMM : public Optimizable {
     std::vector<DepthPair*>* getDepths();
     void setStates(std::vector<std::string>* states);
     std::vector<std::string>* getStates() const;
-    //void setAlphabet(std::set<int>* alphabet);
-    //std::set<int>* getAlphabet() const;
     void setTransition(gsl_matrix* transition);
     virtual double setTransition();
-    //void setRateMatrixQ(gsl_vector* rateParams);
     void setRateMatrixQ(double alpha, double beta, double lambda);
     double setTimeDepMatrixP(double time);
     gsl_matrix* getTransition() const;
     gsl_matrix* getBaumWelchTransitionMat() const;
-    //gsl_matrix* getNumTransitionsMat() const;
     int getKploidy() const;
     void setInitProb(gsl_vector* initProb);
     gsl_vector* getInitProb() const;
@@ -187,7 +165,6 @@ class HMM : public Optimizable {
     virtual double setTransition(gsl_vector* transitionParams); // always saves into this->transition
 
     // functions that change based on model
-    //virtual double getEmissionProb(double tumorDepth, double diploidDepth, int ploidy, int windowIdx, int cellIdx) = 0;
     // note: the log emission functions are the fastest, as the non log ones call the log ones and exp them
     virtual double getEmissionProb(double tumorDepth, double diploidDepth, int ploidy, int cellIdx) = 0;
     virtual double getTotalEmissionProb(int stateIdx, std::vector<std::vector<double>*>* currChrDepthsVec, int chrIdx, int depthIdx) = 0;

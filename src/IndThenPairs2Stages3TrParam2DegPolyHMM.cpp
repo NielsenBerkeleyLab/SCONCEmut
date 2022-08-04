@@ -272,7 +272,6 @@ double IndThenPairs2Stages3TrParam2DegPolyHMM::getStage2LogLikelihood() {
 }
 
 void IndThenPairs2Stages3TrParam2DegPolyHMM::setUpInd2Stages() {
-//void IndThenPairs2Stages3TrParam2DegPolyHMM::setUpInd2Stages(gsl_vector* meanVarianceCoefVec) {
   // this is similar to the set up in the sconce main function
   this->ind2StagesVec = new std::vector<AllInd2Stages3TrParam2DegPolyHMM*>();
   std::vector<DepthPair*>* currDepths = nullptr;
@@ -664,10 +663,7 @@ void IndThenPairs2Stages3TrParam2DegPolyHMM::saveStage2ViterbiDecodedCNA(std::st
 void IndThenPairs2Stages3TrParam2DegPolyHMM::saveStage1CNAToBed(std::string filename) {
   for(unsigned int hmmIdx = 0; hmmIdx < this->ind2StagesVec->size(); hmmIdx++) {
     AllInd2Stages3TrParam2DegPolyHMM* currInd2Stage = (*this->ind2StagesVec)[hmmIdx];
-    //// don't overwrite if read from file // Mon 21 Feb 2022 06:30:06 PM PST if use some files across runs, it's easier to collate results if rewrite same data (but to different filenames)
-    //if(!currInd2Stage->hasHMMBeenReadFromFile()) {
-      currInd2Stage->saveCNAToBed(filename);
-    //}
+    currInd2Stage->saveCNAToBed(filename);
   }
 }
 
@@ -676,15 +672,11 @@ void IndThenPairs2Stages3TrParam2DegPolyHMM::saveStage2CNAToBed(std::string file
 }
 
 void IndThenPairs2Stages3TrParam2DegPolyHMM::saveStage1ParamEstimates(std::string filename) {
-  // Mon 10 Jan 2022 02:14:23 PM PST moved to callIndvBFGS()
   for(unsigned int hmmIdx = 0; hmmIdx < this->ind2StagesVec->size(); hmmIdx++) {
     AllInd2Stages3TrParam2DegPolyHMM* currInd2Stage = (*this->ind2StagesVec)[hmmIdx];
-    //// don't overwrite if read from file
-    //if(!currInd2Stage->hasHMMBeenReadFromFile()) {
-      std::string hmmName = (*this->sampleList)[hmmIdx];
-      boost::replace_all(hmmName, ",", "__");
-      currInd2Stage->saveParamEstimates(0, filename + "__" + hmmName + "__k" + std::to_string(this->MAX_PLOIDY) + ".sconceParams"); // each currInd2Stage holds 1 cell, so always working with 0'th cellIdx
-    //}
+    std::string hmmName = (*this->sampleList)[hmmIdx];
+    boost::replace_all(hmmName, ",", "__");
+    currInd2Stage->saveParamEstimates(0, filename + "__" + hmmName + "__k" + std::to_string(this->MAX_PLOIDY) + ".sconceParams"); // each currInd2Stage holds 1 cell, so always working with 0'th cellIdx
   }
 
   // also save joint file block
@@ -707,7 +699,6 @@ void IndThenPairs2Stages3TrParam2DegPolyHMM::saveAllSummaryDecodedCNAToBed(std::
  * assumes each file is in order of [lib, alpha, beta, lambda, t]
  * entries are [libA, libB, ..., alpha, median(beta), median(lambda), tA, tB, ...]
  */
-//gsl_vector* IndThenPairs2Stages3TrParam2DegPolyHMM::getIndOptimParamsToEstSummaryFromIndvFiles(std::string tumorFileList, std::string sconceEstimatesPath, int numExpectedLines) const {
 void IndThenPairs2Stages3TrParam2DegPolyHMM::getIndOptimParamsToEstFromIndvFiles(std::string tumorFileList, std::string sconceEstimatesPath, int numExpectedLines, gsl_vector* meanVarianceCoefVec) const {
   for(unsigned int cellIdx = 0; cellIdx < this->depthsVec->size(); cellIdx++) {
     std::string hmmName = (*this->sampleList)[cellIdx];
@@ -715,12 +706,9 @@ void IndThenPairs2Stages3TrParam2DegPolyHMM::getIndOptimParamsToEstFromIndvFiles
     std::string currFile = sconceEstimatesPath + "__" + hmmName + "__k" + std::to_string(this->MAX_PLOIDY) + ".sconceParams"; // based on saveStage1ParamEstimates() naming conventions
 
     AllInd2Stages3TrParam2DegPolyHMM* currInd2Stage = (*this->ind2StagesVec)[cellIdx];
-    //currHMM = (*(*this->ind2StagesVec)[cellIdx]->getBFGSAllInd()->getHMMs())[0]; // assumes each AllInd obj only holds 1 cell (in the 0th position of hmmVec)
 
     currInd2Stage->getParamsToEstFromFile(0, currFile, numExpectedLines, meanVarianceCoefVec); // each currInd2Stage holds 1 cell, so always working with 0'th cellIdx. subclass will set hmm's hasBeenReadFromFile
   }
-  // TODO add something that will run the missing ones instead of quitting
-  //return this->getIndOptimParamsToEstSummary();
 }
 
 /*

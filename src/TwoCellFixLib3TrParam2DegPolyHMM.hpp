@@ -9,7 +9,6 @@
  *
  * It's the same as TwoCell3TrParam2DegPolyHMM but all the library sizes are fixed
  *
- * //this->paramsToEst = [beta, gamma, t1, t2, t3]
  * this->paramsToEst = [beta, lambda, t1, t2, t3]
  * this->fixedParams = [lib0, lib1, alpha]
  */
@@ -22,7 +21,6 @@ class TwoCellFixLib3TrParam2DegPolyHMM : public TwoCell3TrParam2DegPolyHMM {
 
   public:
     // constructors and destructor
-    //TwoCellFixLib3TrParam2DegPolyHMM(std::vector<DepthPair*>* depths, int maxPloidy);
     TwoCellFixLib3TrParam2DegPolyHMM(std::vector<DepthPair*>* depths, gsl_vector* fixedParams, int maxPloidy, bool preallocIntermediates = true);
     virtual ~TwoCellFixLib3TrParam2DegPolyHMM();
 
@@ -39,8 +37,6 @@ class TwoCellFixLib3TrParam2DegPolyHMM : public TwoCell3TrParam2DegPolyHMM {
 
     // functions that depend on model
     virtual TwoCellFixLib3TrParam2DegPolyHMM* bfgs(gsl_vector* initGuess, int maxIters, bool verbose = true, bool debug = false) override;
-    //virtual void simulate() override;
-    //virtual void simulate(int seed) override;
 };
 
 #endif

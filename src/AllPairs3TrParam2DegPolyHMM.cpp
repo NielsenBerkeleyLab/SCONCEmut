@@ -26,7 +26,6 @@ AllPairs3TrParam2DegPolyHMM::AllPairs3TrParam2DegPolyHMM(std::vector<DepthPair*>
  */
 void AllPairs3TrParam2DegPolyHMM::makeHMMPairs(gsl_vector* meanVarianceCoefVec, bool preallocIntermediates) {
   // prep for HMM set up
-  //gsl_vector* meanVarianceCoefVec = HMM::createMeanVarianceCoefVec();
   if(meanVarianceCoefVec == nullptr) {
     meanVarianceCoefVec = HMM::createMeanVarianceCoefVec();
   }
@@ -37,24 +36,11 @@ void AllPairs3TrParam2DegPolyHMM::makeHMMPairs(gsl_vector* meanVarianceCoefVec, 
 
   // prep transition mat
   gsl_vector* transitionParams = gsl_vector_alloc(5);
-  //gsl_vector_set(transitionParams, 0, 0.025); // alpha
-  //gsl_vector_set(transitionParams, 1, 0.002); // beta
-  //gsl_vector_set(transitionParams, 2, 0.04); // gamma
-  //gsl_vector_set(transitionParams, 3, 0.05);  // t2
-  //gsl_vector_set(transitionParams, 4, 0.05);  // t3
-  //gsl_vector_set(transitionParams, 0, 0.025); // alpha
   gsl_vector_set(transitionParams, 0, 0.002); // beta
   gsl_vector_set(transitionParams, 1, 0.04); // lambda
   gsl_vector_set(transitionParams, 2, 0.05);  // t1
   gsl_vector_set(transitionParams, 3, 0.05);  // t2
   gsl_vector_set(transitionParams, 4, 0.05);  // t3
-
-//make genSimulations && ./genSimluations -o input/simulations/simulated_k5_set2 -n 50 -k 5 -b 0.01 -g 0.02 --t1 0.1 --t2 0.2 --t3 0.3 --lib1 1 --lib2 1.5 -s 5
-  /*gsl_vector_set(transitionParams, 0, 0.01); // beta
-  gsl_vector_set(transitionParams, 1, 0.02); // gamma
-  gsl_vector_set(transitionParams, 2, 0.1);  // t1
-  gsl_vector_set(transitionParams, 3, 0.2);  // t2
-  gsl_vector_set(transitionParams, 4, 0.3);  // t3*/
 
   // save into paramsToEst
   gsl_vector_set(this->paramsToEst, this->SHARED_TRANSITION_PROB_START_IDX + 0, gsl_vector_get(transitionParams, 0)); // beta
@@ -67,19 +53,12 @@ void AllPairs3TrParam2DegPolyHMM::makeHMMPairs(gsl_vector* meanVarianceCoefVec, 
 
   // process all pairs (call subclass's makeHMMPairs)
   makeHMMPairs(meanVarianceCoefVec, transitionParams, preallocIntermediates);
-  //printColVector(this->paramsToEst);
-  //gsl_vector_free(meanVarianceCoefVec);
   gsl_vector_free(transitionParams);
-
-  //std::cout << "IN AllPairs3TrParam2DegPolyHMM::makeHMMPairs, about to call miscFunctions" << std::endl;
   this->miscFunctions();
-  //exit(0);
-
   this->setHMMNames();
 }
 
 void AllPairs3TrParam2DegPolyHMM::makeHMMPairs(gsl_vector* meanVarianceCoefVec, gsl_vector* transitionParams, bool preallocIntermediates) {
-  //std::cout << "in AllPairs3TrParam2DegPolyHMM::makeHMMPairs" << std::endl;
   std::vector<DepthPair*>* currDepths = nullptr;
   gsl_vector* currMeanVarCoefVec = nullptr; // make them all have their own copies of this vector
   int hmmIdx = 0;
@@ -144,7 +123,6 @@ AllPairs3TrParam2DegPolyHMM::~AllPairs3TrParam2DegPolyHMM() {
  *   k = (n*(n-1)/2) - (n-i)*((n-i)-1)/2 + j - i - 1
  */
 int AllPairs3TrParam2DegPolyHMM::getCell0IdxFromHMMIdx(int hmmIdx) {
-  //std::cout <<" &&&&&&&&&&&&&&&&&& in AllPairs3TrParam2DegPolyHMM::getCell0IdxFromHMMIdx" << std::endl;
   return (int) (this->NUM_CELLS - 2 - floor(sqrt(-8 * hmmIdx + 4 * this->NUM_CELLS *(this->NUM_CELLS - 1) - 7) / 2.0 - 0.5));
 }
 int AllPairs3TrParam2DegPolyHMM::getCell1IdxFromHMMIdx(int hmmIdx) {
@@ -161,7 +139,6 @@ int AllPairs3TrParam2DegPolyHMM::getHMMIdxFromCellPair(int cell0Idx, int cell1Id
  */
 std::vector<HMM*>* AllPairs3TrParam2DegPolyHMM::getHMMsWithCellAsCell0(int cellIdx) {
   std::vector<HMM*>* hmmsWithCell = new std::vector<HMM*>();
-  //std::cout << "cellIdx " << cellIdx << " is cell0 in: ";
 
   int cell0Idx = -1;
   int cell1Idx = -1;
@@ -186,10 +163,8 @@ std::vector<HMM*>* AllPairs3TrParam2DegPolyHMM::getHMMsWithCellAsCell0(int cellI
       continue;
     }
 
-    //std::cout << hmmIdx << " ";
     // filter for which hmms this cell actually appears in (ie in the SelectPairs classes, cells don't necessarily appear in all possible hmms)
     if((*this->hmmsCellAppearsInVec)[cellIdx]->count(hmmIdx) == 0) {
-      //std::cout << "but doesn't appear in hmmsCellAppearsInVec, skipping" << std::endl;
       continue;
     }
 
@@ -200,7 +175,6 @@ std::vector<HMM*>* AllPairs3TrParam2DegPolyHMM::getHMMsWithCellAsCell0(int cellI
       hmmsWithCell->push_back(currHMM);
     }
   }
-  //std::cout << std::endl;
   return hmmsWithCell;
 }
 
@@ -210,7 +184,6 @@ std::vector<HMM*>* AllPairs3TrParam2DegPolyHMM::getHMMsWithCellAsCell0(int cellI
  */
 std::vector<HMM*>* AllPairs3TrParam2DegPolyHMM::getHMMsWithCellAsCell1(int cellIdx) {
   std::vector<HMM*>* hmmsWithCell = new std::vector<HMM*>();
-  //std::cout << "cellIdx " << cellIdx << " is cell1 in: ";
 
   int cell0Idx = -1;
   int cell1Idx = -1;
@@ -229,10 +202,8 @@ std::vector<HMM*>* AllPairs3TrParam2DegPolyHMM::getHMMsWithCellAsCell1(int cellI
     if(hmmIdx == -1) {
       continue;
     }
-    //std::cout << hmmIdx << " ";
 
     if((*this->hmmsCellAppearsInVec)[cellIdx]->count(hmmIdx) == 0) {
-      //std::cout << "but doesn't appear in hmmsCellAppearsInVec, skipping" << std::endl;
       continue;
     }
 
@@ -242,7 +213,6 @@ std::vector<HMM*>* AllPairs3TrParam2DegPolyHMM::getHMMsWithCellAsCell1(int cellI
       hmmsWithCell->push_back(currHMM);
     }
   }
-  //std::cout << std::endl;
   return hmmsWithCell;
 }
 
@@ -250,7 +220,6 @@ std::vector<HMM*>* AllPairs3TrParam2DegPolyHMM::getHMMsWithCellAsCell1(int cellI
  * function to add hmmIdx to this->hmmsCellAppearsInVec for both cell0Idx and cell1Idx
  */
 void AllPairs3TrParam2DegPolyHMM::storeHMMIdxForCells(int cell0Idx, int cell1Idx, int hmmIdx) {
-  //std::cout << "storing hmmIdx: " << hmmIdx << " for cell0: " << cell0Idx << ", and cell1: " << cell1Idx << std::endl;
   this->storeHMMIdxForCell(cell0Idx, hmmIdx);
   this->storeHMMIdxForCell(cell1Idx, hmmIdx);
 }
@@ -259,23 +228,10 @@ void AllPairs3TrParam2DegPolyHMM::storeHMMIdxForCells(int cell0Idx, int cell1Idx
  */
 // only one cell
 void AllPairs3TrParam2DegPolyHMM::storeHMMIdxForCell(int cellIdx, int hmmIdx) {
-  //std::cout << "storing hmmIdx: " << hmmIdx << " for cell0: " << cell0Idx <<  std::endl;
   ((*this->hmmsCellAppearsInVec)[cellIdx])->insert(hmmIdx);
 }
 
 void AllPairs3TrParam2DegPolyHMM::setLibScalingFactors(int cell0Idx, int cell1Idx, double lib0, double lib1) {
-  /*gsl_vector_set(this->paramsToEst, this->LIB_SIZE_SCALING_FACTOR_START_IDX + cellNum, libScalingFactor);
-
-  // cell 0
-  if(cellNum % 2 == 0) {
-    int hmmIdx = getHMMIdxFromCellPair(cellNum, cellNum+1);
-    (*this->hmmVec)[hmmIdx]->setLibScalingFactor(0, libScalingFactor);
-  }
-  // cell 1
-  else {
-    int hmmIdx = getHMMIdxFromCellPair(cellNum-1, cellNum);
-    (*this->hmmVec)[hmmIdx]->setLibScalingFactor(1, libScalingFactor);
-  }*/
   gsl_vector_set(this->paramsToEst, this->LIB_SIZE_SCALING_FACTOR_START_IDX + cell0Idx, lib0);
   gsl_vector_set(this->paramsToEst, this->LIB_SIZE_SCALING_FACTOR_START_IDX + cell1Idx, lib1);
   int hmmIdx = getHMMIdxFromCellPair(cell0Idx, cell1Idx);
@@ -289,7 +245,6 @@ void AllPairs3TrParam2DegPolyHMM::setLibScalingFactors(int cell0Idx, int cell1Id
  */
 void AllPairs3TrParam2DegPolyHMM::setAllLibScalingFactors(int cellNumInPair, double libScalingFactor) {
   for(unsigned int i = 0; i < this->hmmVec->size(); i++) {
-    //this->setLibScalingFactor(i * 2 + cellNumInPair, libScalingFactor);
     gsl_vector_set(this->paramsToEst, this->LIB_SIZE_SCALING_FACTOR_START_IDX + i * 2 + cellNumInPair, libScalingFactor);
     (*this->hmmVec)[i]->setLibScalingFactor(cellNumInPair, libScalingFactor);
   }
@@ -308,10 +263,8 @@ double AllPairs3TrParam2DegPolyHMM::getLibScalingFactor(int cellNum) const {
 double AllPairs3TrParam2DegPolyHMM::setAllTransition(gsl_vector* transitionParams) {
   // save beta and lambda
   double beta = gsl_vector_get(transitionParams, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 0); // idx should be 0
-  //double gamma = gsl_vector_get(transitionParams, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1);
   double lambda = gsl_vector_get(transitionParams, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1);
   gsl_vector_set(this->paramsToEst, this->SHARED_TRANSITION_PROB_START_IDX + 0, beta);
-  //gsl_vector_set(this->paramsToEst, this->SHARED_TRANSITION_PROB_START_IDX + 1, gamma);
   gsl_vector_set(this->paramsToEst, this->SHARED_TRANSITION_PROB_START_IDX + 1, lambda);
 
   double t1 = gsl_vector_get(transitionParams, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 0); // idx should be 2
@@ -354,8 +307,6 @@ void AllPairs3TrParam2DegPolyHMM::setFixedParamsFromIthHMM(gsl_vector* params, i
   gsl_vector_set(this->fixedParams, this->FIXED_TRANSITION_PROB_START_IDX + 0, gsl_vector_get(params, 0)); // alpha
 }
 
-
-
 // Optimizable methods
 /*
  * method to extract HMM specific variables and set those variables for each HMM,
@@ -364,8 +315,6 @@ void AllPairs3TrParam2DegPolyHMM::setFixedParamsFromIthHMM(gsl_vector* params, i
  */
 double AllPairs3TrParam2DegPolyHMM::setParamsToEst(gsl_vector* params) {
   gsl_vector_memcpy(this->paramsToEst, params); // Thu 30 Jan 2020 10:47:35 AM PST changed to be a memcpy instead of free/alloc cycle
-  //std::cout << "AllPairs3TrParam2DegPolyHMM setParamsToEst params: " << std::endl;
-  //printColVector(params);
 
   // nullptr guard
   HMM* hmm = this->getFirstNonNullHMM();
@@ -373,21 +322,13 @@ double AllPairs3TrParam2DegPolyHMM::setParamsToEst(gsl_vector* params) {
   int hmmTrIdx = hmm->TRANSITION_PROB_START_IDX;
   int hmmBranchIdx = hmm->BRANCH_LENGTH_START_IDX;
   int numHMMParams = hmm->getNumParamsToEst();
-
   gsl_vector* currHMMParams = gsl_vector_alloc(numHMMParams);
-  //std::cout << hmmLibIdx << ", " << hmmTrIdx << ", " << hmmBranchIdx << ", " << currHMMParams->size << std::endl;
-  //std::cout << this->LIB_SIZE_SCALING_FACTOR_START_IDX << ", " << this->SHARED_TRANSITION_PROB_START_IDX << ", " << this->BRANCH_LENGTH_START_IDX << std::endl;
-
   int cell0Idx = -1;
   int cell1Idx = -1;
 
   double currLib0BFGS = 0;
   double currLib1BFGS = 0;
-  //double alphaBFGS = gsl_vector_get(params, this->SHARED_TRANSITION_PROB_START_IDX + 0);
-  //double betaBFGS  = gsl_vector_get(params, this->SHARED_TRANSITION_PROB_START_IDX + 1);
-  //double gammaBFGS = gsl_vector_get(params, this->SHARED_TRANSITION_PROB_START_IDX + 2);
   double betaBFGS  = gsl_vector_get(params, this->SHARED_TRANSITION_PROB_START_IDX + 0);
-  //double gammaBFGS = gsl_vector_get(params, this->SHARED_TRANSITION_PROB_START_IDX + 1);
   double lambdaBFGS = gsl_vector_get(params, this->SHARED_TRANSITION_PROB_START_IDX + 1);
   double currT1BFGS = 0;
   double currT2BFGS = 0;
@@ -400,8 +341,6 @@ double AllPairs3TrParam2DegPolyHMM::setParamsToEst(gsl_vector* params) {
     if((*this->hmmVec)[hmmIdx] == nullptr) {
       continue;
     }
-    //// alloc new currHMMParams for each HMM (old paramsToEst for each HMM is freed in HMM::setParamsToEst) Thu 30 Jan 2020 10:50:38 AM PST changed to be memcpy
-    //currHMMParams = gsl_vector_alloc(numHMMParams);
 
     // get cell0 and cell1 indices for libs
     cell0Idx = this->getCell0IdxFromHMMIdx(hmmIdx);
@@ -411,42 +350,24 @@ double AllPairs3TrParam2DegPolyHMM::setParamsToEst(gsl_vector* params) {
     currLib0BFGS = gsl_vector_get(params, this->LIB_SIZE_SCALING_FACTOR_START_IDX + cell0Idx);
     currLib1BFGS = gsl_vector_get(params, this->LIB_SIZE_SCALING_FACTOR_START_IDX + cell1Idx);
 
-    //// get apropriate branch lengths (there are 2 branch lengths stored per HMM
-    //currT2BFGS = gsl_vector_get(params, this->BRANCH_LENGTH_START_IDX + 2 * hmmIdx + 0);
-    //currT3BFGS = gsl_vector_get(params, this->BRANCH_LENGTH_START_IDX + 2 * hmmIdx + 1);
     // get apropriate branch lengths (there are 3 branch lengths stored per HMM
     currT1BFGS = gsl_vector_get(params, this->BRANCH_LENGTH_START_IDX + 3 * hmmIdx + 0);
     currT2BFGS = gsl_vector_get(params, this->BRANCH_LENGTH_START_IDX + 3 * hmmIdx + 1);
     currT3BFGS = gsl_vector_get(params, this->BRANCH_LENGTH_START_IDX + 3 * hmmIdx + 2);
 
-    //std::cout << currLib0BFGS << ", " << currLib1BFGS << ", " << alphaBFGS << ", " << betaBFGS << ", " << gammaBFGS << ", " << currT2BFGS << ", " << currT3BFGS << std::endl;
     // set everything into currHMMParams
     gsl_vector_set(currHMMParams, hmmLibIdx + 0, currLib0BFGS);
     gsl_vector_set(currHMMParams, hmmLibIdx + 1, currLib1BFGS);
-    //gsl_vector_set(currHMMParams, hmmTrIdx + 0, alphaBFGS);
-    //gsl_vector_set(currHMMParams, hmmTrIdx + 1, betaBFGS);
-    //gsl_vector_set(currHMMParams, hmmTrIdx + 2, gammaBFGS);
     gsl_vector_set(currHMMParams, hmmTrIdx + 0, betaBFGS);
-    //gsl_vector_set(currHMMParams, hmmTrIdx + 1, gammaBFGS);
     gsl_vector_set(currHMMParams, hmmTrIdx + 1, lambdaBFGS);
-    //gsl_vector_set(currHMMParams, hmmBranchIdx + 0, currT2BFGS);
-    //gsl_vector_set(currHMMParams, hmmBranchIdx + 1, currT3BFGS);
     gsl_vector_set(currHMMParams, hmmBranchIdx + 0, currT1BFGS);
     gsl_vector_set(currHMMParams, hmmBranchIdx + 1, currT2BFGS);
     gsl_vector_set(currHMMParams, hmmBranchIdx + 2, currT3BFGS);
 
     // call setParamsToEst on subclass, summing return status for each one (GSL_SUCCESS = 0, as returned by HMM::findSteadyStateDist)
-    //std::cout << "IN subclass::SETPARAMSTOEST, currHMMParams:" << std::endl;
-    //printColVector(currHMMParams);
     status += (*this->hmmVec)[hmmIdx]->setParamsToEst(currHMMParams);
-    //(*this->hmmVec)[hmmIdx]->print(stdout);
   }
-  //gsl_vector_free(currHMMParams); // each HMM needs its own copy; don't free this here
-  //std::cout << "end of subclass:setParamsToEst" << std::endl;
-  //this->print(stdout);
-  //std::cout << "#########" << std::endl;
   return status;
-
 }
 
 /*
@@ -455,51 +376,12 @@ double AllPairs3TrParam2DegPolyHMM::setParamsToEst(gsl_vector* params) {
  * these are the same, just scaled up
  */
 void AllPairs3TrParam2DegPolyHMM::convertProbToParam(gsl_vector* dest, const gsl_vector* src) const {
-  //std::cout << "AllPairs3TrParam2DegPolyHMM::convertProbToParam" << std::endl;
-  /*gsl_vector_memcpy(dest, src); // debugging penalty
-  return;*/
   // lib scaling factors
   double r = 0;
   for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
     r = gsl_vector_get(src, this->LIB_SIZE_SCALING_FACTOR_START_IDX + cellIdx);
     gsl_vector_set(dest, this->LIB_SIZE_SCALING_FACTOR_START_IDX + cellIdx, log(r));
   }
-
-  //// shared transition parameters
-  ////double a = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 0);
-  ////double b = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 1);
-  ////double g = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 2);
-  ////double c = 1.0 / (1.0 - 2.0 * a - (double) this->getKploidy() * b - g);
-  ////gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 0, log(a * 2.0 * c));
-  ////gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 1, log(b * (double) this->getKploidy() * c));
-  ////gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 2, log(g * c));
-  //double a = this->getAlpha(); //this->alpha;
-  //double b = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 0);
-  //double g = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 1);
-  //double c = (b * this->getKploidy() + g - 1);
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 0, log(-b * (1-2*a) * (double) this->getKploidy() / c)); // set y
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 1, log(-g * (1-2*a) / c)); // set z
-  ////std::cout << "ALPHA: " << a << ", BETA: " << b << ", GAMMA: " << g << ", b transformed: " << gsl_vector_get(dest, this->SHARED_TRANSITION_PROB_START_IDX + 0) << ", g transformed: " << gsl_vector_get(dest, this->SHARED_TRANSITION_PROB_START_IDX + 1) << std::endl;
-
-  //// pairwise branch lengths
-  //double d = (double) (*this->depthsVec)[0]->maxWindowSize;
-  //double t1 = 0;
-  //double t2 = 0;
-  //double t3 = 0;
-  //for(int pairIdx = 0; pairIdx < this->NUM_PAIRS; pairIdx++) {
-  //  //t2 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX + 2 * pairIdx + 0) / d;
-  //  //t3 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX + 2 * pairIdx + 1) / d;
-  //  //gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX + 2 * pairIdx + 0, log(-(d * t2) / (d * (t2 + t3) - 1))); // set T2
-  //  //gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX + 2 * pairIdx + 1, log(-(d * t3) / (d * (t2 + t3) - 1))); // set T3
-
-  //  t1 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX + 3 * pairIdx + 0) / d;
-  //  t2 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX + 3 * pairIdx + 1) / d;
-  //  t3 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX + 3 * pairIdx + 2) / d;
-  //  c = (d * (t1 + t2 + t3) - 1);
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX + 3 * pairIdx + 0, log(-(d * t1) / c)); // set T1
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX + 3 * pairIdx + 1, log(-(d * t2) / c)); // set T2
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX + 3 * pairIdx + 2, log(-(d * t3) / c)); // set T3
-  //}
 
   // shared transition parameters
   double beta = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 0);
@@ -522,50 +404,12 @@ void AllPairs3TrParam2DegPolyHMM::convertProbToParam(gsl_vector* dest, const gsl
 }
 
 void AllPairs3TrParam2DegPolyHMM::convertParamToProb(gsl_vector* dest, const gsl_vector* src) const {
-  //std::cout << "AllPairs3TrParam2DegPolyHMM::convertParamToProb" << std::endl;
-  /*gsl_vector_memcpy(dest, src); // debugging penalty
-  return;*/
   // lib scaling factors
   double w = 0;
   for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
     w = gsl_vector_get(src, this->LIB_SIZE_SCALING_FACTOR_START_IDX + cellIdx);
     gsl_vector_set(dest, this->LIB_SIZE_SCALING_FACTOR_START_IDX + cellIdx, exp(w));
   }
-
-  //// shared transition parameters
-  ////double x = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 0);
-  ////double y = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 1);
-  ////double z = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 2);
-  ////double c = 1 + exp(x) + exp(y) + exp(z);
-  ////gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 0, exp(x) / (2.0 * c));
-  ////gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 1, exp(y) / ((double) this->getKploidy() * c));
-  ////gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 2, exp(z) / c);
-  //double a = this->getAlpha(); //this->alpha;
-  //double y = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 0);
-  //double z = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 1);
-  //double c = 1 - 2.0*a + exp(y) + exp(z);
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 0, exp(y) / ((double) this->getKploidy() * c)); // beta
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 1, exp(z) / c); // gamma
-
-  //// pairwise branch lengths
-  //double T1 = 0;
-  //double T2 = 0;
-  //double T3 = 0;
-  //for(int pairIdx = 0; pairIdx < this->NUM_PAIRS; pairIdx++) {
-  //  //T2 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX + 2 * pairIdx + 0);
-  //  //T3 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX + 2 * pairIdx + 1);
-  //  //c = 1.0 / (1 + exp(T2) + exp(T3));
-  //  //gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX + 2 * pairIdx + 0, exp(T2) * c); // set t2
-  //  //gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX + 2 * pairIdx + 1, exp(T3) * c); // set t3
-
-  //  T1 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX + 3 * pairIdx + 0);
-  //  T2 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX + 3 * pairIdx + 1);
-  //  T3 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX + 3 * pairIdx + 2);
-  //  c = 1.0 / (1 + exp(T1) + exp(T2) + exp(T3));
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX + 3 * pairIdx + 0, exp(T1) * c); // set t1
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX + 3 * pairIdx + 1, exp(T2) * c); // set t2
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX + 3 * pairIdx + 2, exp(T3) * c); // set t3
-  //}
 
   // shared transition parameters
   double y = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 0);
@@ -608,7 +452,6 @@ void AllPairs3TrParam2DegPolyHMM::setSimParamsToEst(gsl_vector* params) {
   double currLib0BFGS = 0;
   double currLib1BFGS = 0;
   double betaBFGS  = gsl_vector_get(params, this->SHARED_TRANSITION_PROB_START_IDX + 0);
-  //double gammaBFGS = gsl_vector_get(params, this->SHARED_TRANSITION_PROB_START_IDX + 1);
   double lambdaBFGS = gsl_vector_get(params, this->SHARED_TRANSITION_PROB_START_IDX + 1);
   double currT1BFGS = 0;
   double currT2BFGS = 0;
@@ -639,7 +482,6 @@ void AllPairs3TrParam2DegPolyHMM::setSimParamsToEst(gsl_vector* params) {
     currT3BFGS = gsl_vector_get(params, this->BRANCH_LENGTH_START_IDX + 3 * hmmIdx + 2);
 
     gsl_vector_set(currHMMParams, hmmTrIdx + 0, betaBFGS);
-    //gsl_vector_set(currHMMParams, hmmTrIdx + 1, gammaBFGS);
     gsl_vector_set(currHMMParams, hmmTrIdx + 1, lambdaBFGS);
     gsl_vector_set(currHMMParams, hmmBranchIdx + 0, currT1BFGS);
     gsl_vector_set(currHMMParams, hmmBranchIdx + 1, currT2BFGS);
@@ -656,7 +498,7 @@ void AllPairs3TrParam2DegPolyHMM::setSimFixedParams(gsl_vector* params) {
 
   // nullptr guard
   HMM* hmm = this->getFirstNonNullHMM();
-  int hmmLibIdx = 0;//(*this->hmmVec)[0]->LIB_SIZE_SCALING_FACTOR_START_IDX;
+  int hmmLibIdx = 0;
   int hmmTrIdx = hmm->FIXED_TRANSITION_PROB_START_IDX;
   int numHMMParams = hmm->getNumFixedParams();
   gsl_vector* currHMMParams = gsl_vector_alloc(numHMMParams);
@@ -695,7 +537,6 @@ void AllPairs3TrParam2DegPolyHMM::setSimFixedParams(gsl_vector* params) {
  * this function copies all of the individual lib scaling factors into this's lib scaling factors
  */
 void AllPairs3TrParam2DegPolyHMM::miscFunctions() {
-  //std::cout << "In AllPairs3TrParam2DegPolyHMM::miscFunctions" << std::endl;
   int cell0Idx = 0;
   int cell1Idx = 0;
   for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
@@ -709,8 +550,6 @@ void AllPairs3TrParam2DegPolyHMM::miscFunctions() {
     // save reestimated lib sizes into this object
     cell0Idx = getCell0IdxFromHMMIdx(hmmIdx);
     cell1Idx = getCell1IdxFromHMMIdx(hmmIdx);
-    //this->setLibScalingFactor(cell0Idx, (*this->hmmVec)[hmmIdx]->getLibScalingFactor(0));
-    //this->setLibScalingFactor(cell1Idx, (*this->hmmVec)[hmmIdx]->getLibScalingFactor(1));
     this->setLibScalingFactors(cell0Idx, cell1Idx, (*this->hmmVec)[hmmIdx]->getLibScalingFactor(0), (*this->hmmVec)[hmmIdx]->getLibScalingFactor(1));
   }
 
@@ -729,22 +568,9 @@ void AllPairs3TrParam2DegPolyHMM::miscFunctions() {
 }
 
 AllPairs3TrParam2DegPolyHMM* AllPairs3TrParam2DegPolyHMM::bfgs(gsl_vector* initGuess, int maxIters, bool verbose, bool debug) {
-  // create new HMM with the best guess parameters and return it
-  //std::cout << "subclass::bfgs this paramsToEst: ";
-  //printColVector(this->getParamsToEst());
-  //AllPairs3TrParam2DegPolyHMM* bestGuessOptim = new AllPairs3TrParam2DegPolyHMM(*this);
-  //AllPairs3TrParam2DegPolyHMM* bestGuessOptim = AllPairs3TrParam2DegPolyHMM::create(*this);
-  AllPairs3TrParam2DegPolyHMM* bestGuessOptim = this;//AllPairs3TrParam2DegPolyHMM::create(*this);
-  //bestGuessOptim->print(stdout);
-  //std::cout << "subclass::bfgs bestGuessOptim paramsToEst: ";
-  //printColVector(bestGuessOptim->getParamsToEst());
+  AllPairs3TrParam2DegPolyHMM* bestGuessOptim = this;
   gsl_vector* initGuessAsParams = gsl_vector_alloc(initGuess->size);
-  //std::cout << "initGuess: " << std::endl;;
-  //printColVector(initGuess);
   this->convertProbToParam(initGuessAsParams, initGuess);
-  //std::cout << "initGuessAsParams: " << std::endl;
-  //printColVector(initGuessAsParams);
-  //exit(0);
   Optimizable::bfgs(initGuessAsParams, bestGuessOptim, maxIters, verbose, debug);
   gsl_vector_free(initGuessAsParams);
   return bestGuessOptim;
@@ -759,7 +585,6 @@ void AllPairs3TrParam2DegPolyHMM::setInitGuessNthTime(gsl_vector* initGuess, int
     }
 
     // shared transition parameters
-    //gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.01); // alpha
     gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.075); // beta
     gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 0.075); // lambda
 
@@ -777,7 +602,6 @@ void AllPairs3TrParam2DegPolyHMM::setInitGuessNthTime(gsl_vector* initGuess, int
     }
 
     // shared transition parameters
-    //gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.05); // alpha
     gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.025); // beta
     gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 0.025); // lambda
 
@@ -795,7 +619,6 @@ void AllPairs3TrParam2DegPolyHMM::setInitGuessNthTime(gsl_vector* initGuess, int
     }
 
     // shared transition parameters
-    //gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.01); // alpha
     gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.12); // beta
     gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 0.09); // lambda
 
@@ -845,7 +668,6 @@ double AllPairs3TrParam2DegPolyHMM::baumWelchLeastSquares_calcSumSqResid(const g
     currT2 = gsl_vector_get(probs, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 3 * hmmIdx + 1);
     currT3 = gsl_vector_get(probs, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 3 * hmmIdx + 2);
 
-    //std::cout << currLib0BFGS << ", " << currLib1BFGS << ", " << alphaBFGS << ", " << betaBFGS << ", " << gammaBFGS << ", " << currT2BFGS << ", " << currT3BFGS << std::endl;
     // set everything into currHMMProbs
     gsl_vector_set(currHMMProbs, hmmTrIdx + 0, beta);
     gsl_vector_set(currHMMProbs, hmmTrIdx + 1, lambda);
@@ -903,38 +725,11 @@ void AllPairs3TrParam2DegPolyHMM::saveBaumWelchEstsIntoParamsToEst(gsl_vector* v
   }
   this->setParamsToEst(estsWithLibs);
   gsl_vector_memcpy(initGuess, estsWithLibs);
-  //gsl_vector_free(varsToEst_probSpace);
   gsl_vector_free(estsWithLibs);
 }
 
 // same as convertProbToParam, just without library sizes. Fri 26 Jun 2020 05:36:29 PM PDT TODO depends on ordering of paramsToEst; there's probably a more elegant way of doing this
 void AllPairs3TrParam2DegPolyHMM::baumWelchLeastSquares_convertProbToParam(gsl_vector* dest, const gsl_vector* src) const {
-  ////std::cout << "AllPairs3TrParam2DegPolyHMM::baumWelchLeastSquares_convertProbToParam" << std::endl;
-  ////std::cout << this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST << std::endl;
-  //// shared transition parameters
-  //double a = this->getAlpha();
-  //double b = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 0);
-  //double g = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1);
-  //double c = (b * this->getKploidy() + g - 1);
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 0, log(-b * (1-2*a) * (double) this->getKploidy() / c)); // set y
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1, log(-g * (1-2*a) / c)); // set z
-
-  //// pairwise branch lengths
-  //double d = (double) (*this->depthsVec)[0]->maxWindowSize;
-  //double t1 = 0;
-  //double t2 = 0;
-  //double t3 = 0;
-  //for(int pairIdx = 0; pairIdx < this->NUM_PAIRS; pairIdx++) {
-  //  t1 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 3 * pairIdx + 0) / d;
-  //  t2 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 3 * pairIdx + 1) / d;
-  //  t3 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 3 * pairIdx + 2) / d;
-  //  c = (d * (t1 + t2 + t3) - 1);
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 3 * pairIdx + 0, log(-(d * t1) / c)); // set T1
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 3 * pairIdx + 1, log(-(d * t2) / c)); // set T2
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 3 * pairIdx + 2, log(-(d * t3) / c)); // set T3
-  //}
-
-  //std::cout << "AllPairs3TrParam2DegPolyHMM::baumWelchLeastSquares_convertProbToParam" << std::endl;
   // shared transition parameters
   double beta = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 0);
   double lambda = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1);
@@ -956,31 +751,6 @@ void AllPairs3TrParam2DegPolyHMM::baumWelchLeastSquares_convertProbToParam(gsl_v
 }
 
 void AllPairs3TrParam2DegPolyHMM::baumWelchLeastSquares_convertParamToProb(gsl_vector* dest, const gsl_vector* src) const {
-  ////std::cout << "AllPairs3TrParam2DegPolyHMM::baumWelchLeastSquares_convertParamToProb" << std::endl;
-  //// shared transition parameters
-  //double a = this->getAlpha(); //this->alpha;
-  //double y = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 0);
-  //double z = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1);
-  //double c = 1 - 2.0*a + exp(y) + exp(z);
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 0, exp(y) / ((double) this->getKploidy() * c)); // beta
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1, exp(z) / c); // gamma
-
-  //// pairwise branch lengths
-  //double T1 = 0;
-  //double T2 = 0;
-  //double T3 = 0;
-  //for(int pairIdx = 0; pairIdx < this->NUM_PAIRS; pairIdx++) {
-  //  T1 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 3 * pairIdx + 0);
-  //  T2 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 3 * pairIdx + 1);
-  //  T3 = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 3 * pairIdx + 2);
-  //  c = 1.0 / (1 + exp(T1) + exp(T2) + exp(T3));
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 3 * pairIdx + 0, exp(T1) * c); // set t1
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 3 * pairIdx + 1, exp(T2) * c); // set t2
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 3 * pairIdx + 2, exp(T3) * c); // set t3
-  //}
-
-  //std::cout << "AllPairs3TrParam2DegPolyHMM::baumWelchLeastSquares_convertParamToProb" << std::endl;
-  //std::cout << "beta src idx: " << this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST << ", branch idx start: " << this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST << std::endl;
   // shared transition parameters
   double y = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 0);
   double z = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1);
@@ -1122,7 +892,6 @@ void AllPairs3TrParam2DegPolyHMM::decodeMargOneCellAcrossPairs(int cellNum) {
     for(unsigned int hmmIdx = 0; hmmIdx < hmmsWithCellAsCell0->size(); hmmIdx++) {
       // go to hmmIdx, get cell0's forBackMargMatMap
       currHMM = (*hmmsWithCellAsCell0)[hmmIdx];
-      //currMatToAdd = (*(*currHMM->getDepths())[0]->forBackMargMatMap)[currChr];
       currForBackMargMatMap = (*currHMM->getForBackMargMatMapVec())[0];
       currMatToAdd = (*currForBackMargMatMap)[currChr];
 
@@ -1133,7 +902,6 @@ void AllPairs3TrParam2DegPolyHMM::decodeMargOneCellAcrossPairs(int cellNum) {
     // for each hmm this cell is in as the right in the pair (cell1)
     for(unsigned int hmmIdx = 0; hmmIdx < hmmsWithCellAsCell1->size(); hmmIdx++) {
       currHMM = (*hmmsWithCellAsCell1)[hmmIdx];
-      //currMatToAdd = (*(*currHMM->getDepths())[1]->forBackMargMatMap)[currChr];
       currForBackMargMatMap = (*currHMM->getForBackMargMatMapVec())[1];
       currMatToAdd = (*currForBackMargMatMap)[currChr];
       gsl_matrix_add(summedLogLikMat, currMatToAdd);
@@ -1189,17 +957,6 @@ void AllPairs3TrParam2DegPolyHMM::decodeStatSummaryOneCellAcrossPairs(int summar
   // identify which hmms this cell is in
   std::vector<HMM*>* hmmsWithCellAsCell0 = this->getHMMsWithCellAsCell0(cellNum);
   std::vector<HMM*>* hmmsWithCellAsCell1 = this->getHMMsWithCellAsCell1(cellNum);
-  //std::cout << "cell " << cellNum << "is 0 in: " << std::endl;
-  //for(unsigned int i = 0; i < hmmsWithCellAsCell0->size(); i++) {
-  //  std::cout << (*hmmsWithCellAsCell0)[i] << "\t";
-  //}
-  //std::cout << std::endl;
-
-  //std::cout << "cell " << cellNum << "is 1 in: " << std::endl;
-  //for(unsigned int i = 0; i < hmmsWithCellAsCell1->size(); i++) {
-  //  std::cout << (*hmmsWithCellAsCell1)[i] << "\t";
-  //}
-  //std::cout << std::endl;
 
   // intermediate vector. stores all calc ploidies for a given genomic window
   gsl_vector* ploidies = nullptr;
@@ -1209,7 +966,6 @@ void AllPairs3TrParam2DegPolyHMM::decodeStatSummaryOneCellAcrossPairs(int summar
   }
   // otherwise, store a vec of every state so can calc mean/median
   else {
-    //ploidies = gsl_vector_alloc(this->NUM_CELLS - 1); // each cell is in n-1 pairs. one entry for each pair
     ploidies = gsl_vector_alloc(hmmsWithCellAsCell0->size() + hmmsWithCellAsCell1->size()); // only alloc for the number of HMMs this cell appears in, else will introduce scaling errors
   }
 
@@ -1394,7 +1150,6 @@ void AllPairs3TrParam2DegPolyHMM::saveAllSummaryDecodedCNAToBed(std::string file
         outFile << coord << sep;
 
         // decoded CNA
-        //outFile << (*(*currSummaryPathMap)[currChr])[regionIdx];
         outFile << std::setprecision(5) << (*(*currSummaryPathMap)[currChr])[regionIdx];
 
         // new line

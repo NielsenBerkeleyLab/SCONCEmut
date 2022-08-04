@@ -45,16 +45,12 @@ void AllPairs0TrParam2DegPolyHMMWithMuts::makeOneHMMPair(int i, int j, bool prea
   gsl_vector* currMeanVarCoefVec = gsl_vector_alloc(this->meanVarianceCoefVec->size);
   gsl_vector_memcpy(currMeanVarCoefVec, this->meanVarianceCoefVec);
   hmm->setMeanVarianceFn(currMeanVarCoefVec);
-  //hmm->setTransition(transitionParams); // this vector isn't saved anywhere
   hmm->setLibScalingFactorsToTotalRatio();
   hmm->setAlpha(this->getAlpha());
 
   this->setLibScalingFactors(i, j, hmm->getLibScalingFactor(0), hmm->getLibScalingFactor(1));
 }
 
-//AllPairs0TrParam2DegPolyHMMWithMuts* AllPairs0TrParam2DegPolyHMMWithMuts::bfgs(gsl_vector* initGuess, int maxIters, bool verbose, bool debug) {
-//  // TODO
-//}
 AllPairs0TrParam2DegPolyHMMWithMuts::~AllPairs0TrParam2DegPolyHMMWithMuts() {
   // TODO
 }

@@ -300,12 +300,7 @@ int main(int argc, char** argv) {
     indThenPairsHMM->saveStage1ParamEstimates(outputBase);
   }
 
-  // INSERT indInitGuess SHORTCUTS HERE
-/*gsl_vector_set(indInitGuess,   0   , 0.9736357438666501940005559845303650945425);
-gsl_vector_set(indInitGuess,   101 , 0.1226746711770437536781486187464906834066);*/
-
   printf("TOTAL LOGLIKLIHOOD AFTER INDEPENDENT CELL ESTIMATION: %.5f\n\n", indThenPairsHMM->getTotalIndLogLikelihood());
-  //exit(0);
 
   // estimate mutation parameters on individual cells
   // mu: cnaToMutRateMu for l(t1,t2,t3) ~ P(cnaToMutRateMu * t1 * X1)...
@@ -364,8 +359,6 @@ gsl_vector_set(indInitGuess,   101 , 0.1226746711770437536781486187464906834066)
     indThenPairsHMM->copyStage1EstsIntoStage2FixedParams(stage2FixedParams, stage2InitGuess, optimizedIndParamsToEst, 0); // save 0 libs into fixedParams
   }
 
-  // INSERT optimizedIndParamsToEst AND stage2FixedParams SHORTCUTS HERE
-
   if(verbose) {
     std::cout << "optimizedIndParamsToEst" << std::endl;
     printColVector(optimizedIndParamsToEst);
@@ -394,8 +387,6 @@ gsl_vector_set(indInitGuess,   101 , 0.1226746711770437536781486187464906834066)
       printColVector(indThenPairsHMM->getStage2HMM()->getFixedParams());
       std::cout << std::endl;
     }
-    //indThenPairsHMM->getStage2HMM()->print(stdout);
-    //exit(0);
   }
 
   // clean up stage 1 intermediates
@@ -404,17 +395,6 @@ gsl_vector_set(indInitGuess,   101 , 0.1226746711770437536781486187464906834066)
   std::chrono::steady_clock::time_point stage2setupEnd = std::chrono::steady_clock::now();
   double stage2setupElapsedSec = std::chrono::duration_cast<std::chrono::nanoseconds>(stage2setupEnd - stage2setupBegin).count() / 1e9;
   fprintf(stdout, "STAGE 2 SETUP TIME (sec): %.20f\n", stage2setupElapsedSec);
-
-  // mutation counts are estimated when MutationPairs are created to save memory
-  //// ##### estimate mutation counts for each MutationPair #####
-  //std::chrono::steady_clock::time_point mutPairMutCountBegin = std::chrono::steady_clock::now();
-  //std::cout << "######## STARTING MUTATIONPAIR:MUTATION COUNT BFGS  ########" << std::endl;
-  //indThenPairsHMM->bfgsStage2(stage2InitGuess, maxPairsBFGSIters, outputBase, verbose, debug);
-  //indThenPairsHMM->est
-  //std::cout << "######## DONE WITH MUTATIONPAIR:MUTATION COUNT BFGS ########" << std::endl;
-  //std::chrono::steady_clock::time_point mutPairMutCountEnd = std::chrono::steady_clock::now();
-  //double mutPairMutCountElapsedSec = std::chrono::duration_cast<std::chrono::nanoseconds>(mutPairMutCountEnd - mutPairMutCountBegin).count() / 1e9;
-  //fprintf(stdout, "MUTATIONPAIR:MUTATION COUNT BFGS TIME (sec): %.20f\n", mutPairMutCountElapsedSec);
 
   // ##### run bfgs on stage 2 #####
   std::cout << "######## STARTING STAGE 2 BFGS ########" << std::endl;
@@ -474,10 +454,8 @@ gsl_vector_set(indInitGuess,   101 , 0.1226746711770437536781486187464906834066)
   printf("TOTAL TIME ELAPSED (sec): %.5f\n", elapsedSec);
 
   // clean up
-  // TODO
   deleteChrWindowIdxLineNumMaps(chrWindowIdxLineNumMaps); // includes a call to delete for pair pointer
 
   return 0;
 }
-
 

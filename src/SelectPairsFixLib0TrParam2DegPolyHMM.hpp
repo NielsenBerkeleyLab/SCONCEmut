@@ -41,7 +41,6 @@ class SelectPairsFixLib0TrParam2DegPolyHMM : public AllPairsFixLib0TrParam2DegPo
     static SelectPairsFixLib0TrParam2DegPolyHMM* create(std::vector<DepthPair*>* depths, std::vector<std::string>* sampleList, gsl_vector* fixedParams, int maxPloidy, int numPairs, int numPairsToSummarize, int ordering, unsigned int seed, gsl_matrix* stage1NearestCellIdxMat, gsl_vector* meanVarianceCoefVec, bool preallocIntermediates = true);
 
     virtual void print(FILE* stream) override;
-    //virtual void decodeStatSummaryOneCellAcrossPairs(int summaryMethod, int cellNum) override;
     virtual SelectPairsFixLib0TrParam2DegPolyHMM* bfgs(gsl_vector* initGuess, std::string filename, int maxIters, bool verbose = true, bool debug = false) override;
     void resetSkippedParams();
 };

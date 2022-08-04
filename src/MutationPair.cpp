@@ -8,9 +8,6 @@ MutationPair::MutationPair(std::vector<MutationList*>* mutListVec, gsl_vector* i
   std::vector<std::string> sortedB(mutListB->coordVec->begin(), mutListB->coordVec->end());
   std::sort(sortedA.begin(), sortedA.end());
   std::sort(sortedB.begin(), sortedB.end());
-  //// intersection
-  //this->sharedMutationVec = new std::vector<std::string>(sortedA.size());
-  //std::vector<std::string>::iterator lastElement = std::set_intersection(sortedA.begin(), sortedA.end(), sortedB.begin(), sortedB.end(), this->sharedMutationVec->begin());
   // union
   this->sharedMutationVec = new std::vector<std::string>(sortedA.size() + sortedB.size());
   std::vector<std::string>::iterator lastElement = std::set_union(sortedA.begin(), sortedA.end(), sortedB.begin(), sortedB.end(), this->sharedMutationVec->begin());
@@ -24,15 +21,8 @@ MutationPair::MutationPair(std::vector<MutationList*>* mutListVec, gsl_vector* i
   }
   else {
     gsl_vector_set_all(this->paramsToEst, 5);
-    //gsl_vector_set_all(this->internalInitGuess, 10);
     gsl_vector_memcpy(this->internalInitGuess, this->paramsToEst);
   }
-  //std::cout << "MutationPair ctor going to run bfgs" << std::endl;
-  //this->print(stdout);
-  //this->estMutCountsPerBranch(nullptr, this->internalInitGuess, 500, this->verbose); // mutation bfgs short circuit here
-  //this->bfgs(this->internalInitGuess, 2, this->verbose, this->gradientDebug); // TODO change back to 500
-  //this->bfgs(this->internalInitGuess, 500, this->verbose, this->gradientDebug);
-  //gsl_vector_free(initGuess);
 }
 
 MutationPair::~MutationPair() {
@@ -43,7 +33,6 @@ MutationPair::~MutationPair() {
  * calculates l(X1,X2,X3) = sum_sites [log(p(data_i | S_i=(1,1)) * X1/N + p(data_i | S_i=(1,0)) * X2/N + p(data_i | S_i=(0,1))*X3/N + p(data_i | S_i=(0,0))*(N-X1-X2-X3)/N)]
  */
 double MutationPair::getLogLikelihood() {
-  //return GSL_NAN;
   double totalLl = 0;
   double currLl = 0;
   double x1 = gsl_vector_get(this->paramsToEst, 0);
@@ -72,16 +61,11 @@ double MutationPair::getLogLikelihood() {
     prob_b0 = mutListB->getLikelihood(currSite, false);
 
     // calc ll for each type of mutation using betabinomial dist
-    //prob_s11 = mutListA->getLikelihood(currSite, true)  * mutListB->getLikelihood(currSite, true);
-    //prob_s10 = mutListA->getLikelihood(currSite, true)  * mutListB->getLikelihood(currSite, false);
-    //prob_s01 = mutListA->getLikelihood(currSite, false) * mutListB->getLikelihood(currSite, true);
-    //prob_s00 = mutListA->getLikelihood(currSite, false) * mutListB->getLikelihood(currSite, false);
-
     prob_s11 = prob_a1 * prob_b1;
     prob_s10 = prob_a1 * prob_b0;
     prob_s01 = prob_a0 * prob_b1;
     prob_s00 = prob_a0 * prob_b0;
-    // mutPairMissing
+
     // if A doesn't have any data, then prob of both being alt or A alone being alt is 0
     if(mutListA->coordNumRefReadsMap->count(currSite) == 0) {
       prob_s11 = 0;
@@ -91,10 +75,8 @@ double MutationPair::getLogLikelihood() {
       prob_s11 = 0;
       prob_s01 = 0;
     }
-    //std::cout << "mutPairProb: " << prob_a1 << ", " << prob_a0 << ", " << prob_b1 << ", " << prob_b0 << " ::: " << prob_s11 << ", " << prob_s10 << ", " << prob_s01 << ", " << prob_s00 << std::endl;
 
-    //std::cout << "prob_s11: " << prob_s11 << ", " << prob_s10 << ", " << prob_s01 << ", " << prob_s00 << std::endl;
-    // try normalizing by total prob
+    // normalize by total prob
     totalProb = prob_s11 + prob_s10 + prob_s01 + prob_s00;
     if(compareDoubles(0, totalProb)) {
       currLl = 0;
@@ -104,19 +86,10 @@ double MutationPair::getLogLikelihood() {
       prob_s10 /= totalProb;
       prob_s01 /= totalProb;
       prob_s00 /= totalProb;
-      //std::cout << "totalProb: " << totalProb << ", " << prob_s11 << ", " << prob_s10 << ", " << prob_s01 << ", " << prob_s00 << std::endl;
-      //std::cout << "prob_s: " <<
-      //  mutListA->getLikelihood(currSite, true) << " * " << mutListB->getLikelihood(currSite, true) << ", " <<
-      //  mutListA->getLikelihood(currSite, true) << " * " << mutListB->getLikelihood(currSite, false) << ", " <<
-      //  mutListA->getLikelihood(currSite, false) << " * " << mutListB->getLikelihood(currSite, true) << ", " <<
-      //  mutListA->getLikelihood(currSite, false) << " * " << mutListB->getLikelihood(currSite, false) << ", " << std::endl;
-      //std::cout << "prob_s: " << prob_s11 << ", " << prob_s10 << ", " << prob_s01 << ", " << prob_s00  << "; " << x1/N << ", " << x2/N << ", " << x3/N << ", " << (N-x1-x2-x3)/N << "; " << prob_s11 * x1/N + prob_s10 * x2/N + prob_s01 * x3/N + prob_s00 * (N-x1-x2-x3)/N << std::endl;
 
       // then sum up and store
       currLl = log(prob_s11 * x1/N + prob_s10 * x2/N + prob_s01 * x3/N + prob_s00 * (N-x1-x2-x3)/N); // P(D|S=(1,1)) * X1/N + P(D|S=(1,0)) * X2/N  + ...
-      //std::cout << "currLl: " << currLl << std::endl;
       if(gsl_isinf(currLl) || gsl_isnan(currLl)) {
-        //return GSL_NAN; // Sun 10 Jul 2022 01:38:03 PM PDT test?? ==> Tue 12 Jul 2022 03:31:07 PM PDT should probably be 0; inf comes from taking the log of 0 (from sites with no data)
         currLl = 0;
       }
     }
@@ -141,23 +114,18 @@ double MutationPair::checkOptimProbValidity(gsl_vector* probs) const {
   double validMax = this->getValidOptimParamMax();
   for(unsigned int i = 0; i < probs->size; i++) {
     curr = gsl_vector_get(probs, i);
-    //if(curr < 1e-2) {
     if(curr < 0) {
-      //std::cout << "NAN: curr " << curr << " < 1e-2" << std::endl;
       return GSL_NAN;
     }
     if(curr > validMax) {
-      //std::cout << "NAN: curr " << curr << " > " << validMax << std::endl;
       return GSL_NAN;
     }
     if(gsl_isnan(curr)) {
-      //std::cout << "NAN: curr is nan" << std::endl;
       return GSL_NAN;
     }
   }
   double paramSum = gsl_blas_dasum(probs);
   if(paramSum > validMax) {
-    //std::cout << "NAN: paramSum " << paramSum << " > " << validMax << std::endl;
     return GSL_NAN;
   }
 
@@ -172,9 +140,6 @@ double MutationPair::checkOptimProbValidity(gsl_vector* probs) const {
   }
   return 0;
 }
-
-
-
 
 // ex estimated x1+x2+x3 shouldn't be greater than N
 double MutationPair::getValidOptimParamMax() const {

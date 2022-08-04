@@ -11,8 +11,6 @@
 #include <boost/random/variate_generator.hpp>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio.hpp>
-// https://www.boost.org/doc/libs/1_70_0/libs/random/example/random_demo.cpp
-// This is a typedef for a random number generator. Try boost::mt19937 or boost::ecuyer1988 instead of boost::minstd_rand
 typedef boost::minstd_rand base_generator_type;
 
 #include "util.hpp"

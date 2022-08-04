@@ -22,31 +22,18 @@ class TwoCell0TrParam2DegPolyHMMWithMuts : public TwoCell0TrParam2DegPolyHMM {
   public:
     // constructors and destructor
     TwoCell0TrParam2DegPolyHMMWithMuts(std::vector<DepthPair*>* depths, MutationPair* mutPair, gsl_vector* fixedParams, int maxPloidy, bool preallocIntermediates = true);
-    //TwoCell0TrParam2DegPolyHMMWithMuts(const TwoCell0TrParam2DegPolyHMMWithMuts& otherHMMWithMuts);
     virtual ~TwoCell0TrParam2DegPolyHMMWithMuts();
 
     // accessors and mutators
     double getCnaToMutRateMu();
     void setCnaToMutRateMu(double rate);
 
-    // functions that depend on numbering and ordering of transition params
-    //virtual double setTransition(gsl_vector* transitionParams) override;
-    //virtual double setTransition(gsl_matrix* dest, gsl_vector* transitionParams) override;
-    //using HMM::setTransition;
-    //virtual void convertProbToParam(gsl_vector* dest, const gsl_vector* src) const override;
-    //virtual void convertParamToProb(gsl_vector* dest, const gsl_vector* src) const override;
-
     // functions that depend on model
-    //virtual int getMaxNumBFGSStarts() const override;
     virtual TwoCell0TrParam2DegPolyHMMWithMuts* bfgs(gsl_vector* initGuess, int maxIters, bool verbose = true, bool debug = false) override;
     virtual void print(FILE* stream) override;
     virtual double getLogLikelihood() override;
     virtual double getMutLogLikelihood();
     virtual void estMutCountsPerBranch();
-    //virtual void simulate() override;
-    //virtual void simulate(int seed) override;
-    //virtual void setInitGuessNthTime(gsl_vector* initGuess, int iter, int numTotalRuns) const override;
-
 };
 
 #endif

@@ -28,9 +28,6 @@ void AllInd3TrParam2DegPolyHMM::makeHMMs() {
 
   // prep transition mat
   gsl_vector* transitionParams = gsl_vector_alloc(3);
-  //gsl_vector_set(transitionParams, 0, 0.2); // beta
-  //gsl_vector_set(transitionParams, 1, 10); // lambda
-  //gsl_vector_set(transitionParams, 2, 0.05);  // t
   gsl_vector_set(transitionParams, 0, 0.01); // beta
   gsl_vector_set(transitionParams, 1, 500); // lambda
   gsl_vector_set(transitionParams, 2, 0.01);  // t
@@ -51,7 +48,6 @@ void AllInd3TrParam2DegPolyHMM::makeHMMs() {
 }
 
 void AllInd3TrParam2DegPolyHMM::makeHMMs(gsl_vector* meanVarianceCoefVec, gsl_vector* transitionParams) {
-  //std::cout << "in AllInd3TrParam2DegPolyHMM::makeHMMs" << std::endl;
   std::vector<DepthPair*>* currDepths = nullptr;
   gsl_vector* currMeanVarCoefVec = nullptr; // make them all have their own copies of this vector
   for(unsigned int hmmIdx = 0; hmmIdx < this->depthsVec->size(); hmmIdx++) {
@@ -104,10 +100,8 @@ double AllInd3TrParam2DegPolyHMM::getLibScalingFactor(int cellNum) const {
 double AllInd3TrParam2DegPolyHMM::setAllTransition(gsl_vector* transitionParams) {
   // save beta and lambda
   double beta = gsl_vector_get(transitionParams, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 0); // idx should be 0
-  //double gamma = gsl_vector_get(transitionParams, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1);
   double lambda = gsl_vector_get(transitionParams, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1);
   gsl_vector_set(this->paramsToEst, this->SHARED_TRANSITION_PROB_START_IDX + 0, beta);
-  //gsl_vector_set(this->paramsToEst, this->SHARED_TRANSITION_PROB_START_IDX + 1, gamma);
   gsl_vector_set(this->paramsToEst, this->SHARED_TRANSITION_PROB_START_IDX + 1, lambda);
 
   double t = gsl_vector_get(transitionParams, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + 0); // idx should be 2
@@ -145,57 +139,36 @@ void AllInd3TrParam2DegPolyHMM::setFixedParamsFromIthHMM(gsl_vector* params, int
  */
 double AllInd3TrParam2DegPolyHMM::setParamsToEst(gsl_vector* params) {
   gsl_vector_memcpy(this->paramsToEst, params);
-  //std::cout << "AllInd3TrParam2DegPolyHMM setParamsToEst params: " << std::endl;
-  //printColVector(params);
 
   int hmmLibIdx = (*this->hmmVec)[0]->LIB_SIZE_SCALING_FACTOR_START_IDX;
   int hmmTrIdx = (*this->hmmVec)[0]->TRANSITION_PROB_START_IDX;
   int hmmBranchIdx = (*this->hmmVec)[0]->BRANCH_LENGTH_START_IDX;
   int numHMMParams = (*this->hmmVec)[0]->getNumParamsToEst();
   gsl_vector* currHMMParams = gsl_vector_alloc(numHMMParams);
-  //std::cout << hmmLibIdx << ", " << hmmTrIdx << ", " << hmmBranchIdx << ", " << currHMMParams->size << std::endl;
-  //std::cout << this->LIB_SIZE_SCALING_FACTOR_START_IDX << ", " << this->SHARED_TRANSITION_PROB_START_IDX << ", " << this->BRANCH_LENGTH_START_IDX << std::endl;
 
   double currLibBFGS = 0;
   double betaBFGS  = gsl_vector_get(params, this->SHARED_TRANSITION_PROB_START_IDX + 0);
-  //double gammaBFGS = gsl_vector_get(params, this->SHARED_TRANSITION_PROB_START_IDX + 1);
   double lambdaBFGS = gsl_vector_get(params, this->SHARED_TRANSITION_PROB_START_IDX + 1);
   double currTBFGS = 0;
 
   double status = 0;
   // for each HMM, call that HMM's setParamsToEst method
   for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
-    //// alloc new currHMMParams for each HMM (old paramsToEst for each HMM is freed in HMM::setParamsToEst) Thu 30 Jan 2020 10:50:38 AM PST changed to be memcpy
-    //currHMMParams = gsl_vector_alloc(numHMMParams);
-
-
     // get appropriate libs
     currLibBFGS = gsl_vector_get(params, this->LIB_SIZE_SCALING_FACTOR_START_IDX + hmmIdx);
 
     // get apropriate branch lengths (there is 1 branch lengths stored per HMM)
     currTBFGS = gsl_vector_get(params, this->BRANCH_LENGTH_START_IDX + hmmIdx);
 
-    //std::cout << currLib0BFGS << ", " << currLib1BFGS << ", " << alphaBFGS << ", " << betaBFGS << ", " << lambdaBFGS << ", " << currT2BFGS << ", " << currT3BFGS << std::endl;
     // set everything into currHMMParams
     gsl_vector_set(currHMMParams, hmmLibIdx, currLibBFGS);
     gsl_vector_set(currHMMParams, hmmTrIdx + 0, betaBFGS);
-    //gsl_vector_set(currHMMParams, hmmTrIdx + 1, gammaBFGS);
     gsl_vector_set(currHMMParams, hmmTrIdx + 1, lambdaBFGS);
     gsl_vector_set(currHMMParams, hmmBranchIdx, currTBFGS);
 
     // call setParamsToEst on subclass, summing return status for each one (GSL_SUCCESS = 0, as returned by HMM::findSteadyStateDist)
-    //std::cout << "IN subclass::SETPARAMSTOEST, currHMMParams:" << std::endl;
-    //printColVector(currHMMParams);
     status += (*this->hmmVec)[hmmIdx]->setParamsToEst(currHMMParams);
-    //(*this->hmmVec)[hmmIdx]->print(stdout);
   }
-  //gsl_vector_free(currHMMParams); // each HMM needs its own copy; don't free this here
-  //std::cout << "end of subclass:setParamsToEst" << std::endl;
-  //this->print(stdout);
-  //std::cout << "#########" << std::endl;
-  /*if(status != GSL_SUCCESS) {
-    std::cerr << "AllInd3TrParam2DegPolyHMM::setParamsToEst caught nan status, returning nan" << std::endl;
-  }*/
   return status;
 }
 
@@ -205,30 +178,12 @@ double AllInd3TrParam2DegPolyHMM::setParamsToEst(gsl_vector* params) {
  * these are the same, just scaled up
  */
 void AllInd3TrParam2DegPolyHMM::convertProbToParam(gsl_vector* dest, const gsl_vector* src) const {
-  //std::cout << "AllInd3TrParam2DegPolyHMM::convertProbToParam" << std::endl;
   // lib scaling factors
   double r = 0;
   for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
     r = gsl_vector_get(src, this->LIB_SIZE_SCALING_FACTOR_START_IDX + cellIdx);
     gsl_vector_set(dest, this->LIB_SIZE_SCALING_FACTOR_START_IDX + cellIdx, log(r / 10.0));// lib10
   }
-
-  //// shared transition parameters
-  //double a = this->getAlpha();
-  //double b = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 0);
-  //double g = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 1);
-  //double c = (b * this->getKploidy() + g - 1);
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 0, log(-b * (1-2*a) * (double) this->getKploidy() / c)); // set y
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 1, log(-g * (1-2*a) / c)); // set z
-
-  //// branch lengths
-  //double d = (double) (*this->depthsVec)[0]->maxWindowSize;
-  //double t = 0;
-  //for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-  //  t = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX + cellIdx + 0) / d;
-  //  c = (d * t - 1);
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX + cellIdx, log(-(d * t) / c)); // set T
-  //}
 
   // shared transition parameters
   double beta = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 0);
@@ -246,7 +201,6 @@ void AllInd3TrParam2DegPolyHMM::convertProbToParam(gsl_vector* dest, const gsl_v
 }
 
 void AllInd3TrParam2DegPolyHMM::convertParamToProb(gsl_vector* dest, const gsl_vector* src) const {
-  //std::cout << "AllInd3TrParam2DegPolyHMM::convertParamToProb" << std::endl;
   // lib scaling factors
   double w = 0;
   for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
@@ -254,27 +208,10 @@ void AllInd3TrParam2DegPolyHMM::convertParamToProb(gsl_vector* dest, const gsl_v
     gsl_vector_set(dest, this->LIB_SIZE_SCALING_FACTOR_START_IDX + cellIdx, exp(w) * 10.0); // lib10
   }
 
-  //// shared transition parameters
-  //double a = this->getAlpha();
-  //double y = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 0);
-  //double z = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 1);
-  //double c = 1 - 2.0*a + exp(y) + exp(z);
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 0, exp(y) / ((double) this->getKploidy() * c)); // beta
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 1, exp(z) / c); // gamma
-
-  //// pairwise branch lengths
-  //double T = 0;
-  //for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-  //  T = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX + cellIdx);
-  //  c = 1.0 / (1 + exp(T));
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX + cellIdx + 0, exp(T) * c); // set t1
-  //}
-
   // shared transition parameters
   double y = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 0);
   double z = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 1);
   gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 0, exp(y)); // beta
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 1, exp(z)); // lambda
   gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 1, exp(z) * 1e6); // lambda
 
   // pairwise branch lengths
@@ -300,7 +237,6 @@ void AllInd3TrParam2DegPolyHMM::setSimParamsToEst(gsl_vector* params) {
 
   double currLibBFGS = 0;
   double betaBFGS  = gsl_vector_get(params, this->SHARED_TRANSITION_PROB_START_IDX + 0);
-  //double gammaBFGS = gsl_vector_get(params, this->SHARED_TRANSITION_PROB_START_IDX + 1);
   double lambdaBFGS = gsl_vector_get(params, this->SHARED_TRANSITION_PROB_START_IDX + 1);
   double currTBFGS = 0;
 
@@ -316,7 +252,6 @@ void AllInd3TrParam2DegPolyHMM::setSimParamsToEst(gsl_vector* params) {
     currTBFGS = gsl_vector_get(params, this->BRANCH_LENGTH_START_IDX + hmmIdx);
 
     gsl_vector_set(currHMMParams, hmmTrIdx + 0, betaBFGS);
-    //gsl_vector_set(currHMMParams, hmmTrIdx + 1, gammaBFGS);
     gsl_vector_set(currHMMParams, hmmTrIdx + 1, lambdaBFGS);
     gsl_vector_set(currHMMParams, hmmBranchIdx + 0, currTBFGS);
 
@@ -360,10 +295,8 @@ void AllInd3TrParam2DegPolyHMM::miscFunctions() {
 }
 
 void AllInd3TrParam2DegPolyHMM::setInitGuessNthTime(gsl_vector* initGuess, int iter, int numTotalRuns) const {
-  //std::cout << "AllInd3TrParam2DegPolyHMM::setInitGuessNthTime iter: " << iter << ", numTotalRuns: " << numTotalRuns << ", this->baumWelchParamResults->size(): " << this->baumWelchParamResults->size() << std::endl;
   gsl_vector_set_zero(initGuess);
   if(this->baumWelchParamResults != nullptr && iter < (int) this->baumWelchParamResults->size()) {
-  //if(this->baumWelchParamResults != nullptr) {
     gsl_vector_memcpy(initGuess, (*this->baumWelchParamResults)[iter]); // save iter'th set of params into initGuess
     bool bwParamAdjusted = false; // bwAdj
     for(unsigned int paramIdx = 0; paramIdx < initGuess->size; paramIdx++) {
@@ -380,18 +313,7 @@ void AllInd3TrParam2DegPolyHMM::setInitGuessNthTime(gsl_vector* initGuess, int i
     }
 
     // if passed -1, this is an emergency reset (default params) because the prior transition params failed for this run. reset lib size to libRatio and try different transition params
-    //if(numTotalRuns == -1) {
     if(numTotalRuns < 0) {
-      /*// libs
-      if(this->NUM_LIBS_TO_EST > 0) {
-        int initGuessIdx = this->LIB_SIZE_SCALING_FACTOR_START_IDX;
-        double lib = 0;
-        for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
-          lib = (*this->hmmVec)[hmmIdx]->calcLibScalingFactorsToTotalRatio(0);
-          gsl_vector_set(initGuess, initGuessIdx, lib);
-          initGuessIdx += 1;
-        }
-      }*/
       gsl_vector_memcpy(initGuess, (*this->baumWelchParamResults)[iter]); // save iter'th set of params into initGuess to get libs
 
       // bw libs
@@ -545,314 +467,7 @@ void AllInd3TrParam2DegPolyHMM::setInitGuessNthTime(gsl_vector* initGuess, int i
           gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.05); // set t
         }
       }
-
-      /*// check if default params match this->initGuessCopyBeforeBFGS (ie baum welch and ls failed, so those set initGuess to orig params. don't to reset to same thing). only checks beta and lambda, assumes t are the same
-      if(numTotalRuns == -2 || (compareDoubles(gsl_vector_get(this->initGuessCopyBeforeBFGS, this->SHARED_TRANSITION_PROB_START_IDX + 0), 0.01) && // beta
-        compareDoubles(gsl_vector_get(this->initGuessCopyBeforeBFGS, this->SHARED_TRANSITION_PROB_START_IDX + 0), 500))) { // lambda
-        std::cout << "Detected beta and lambda values from default params and this->initGuessCopyBeforeBFGS match, or secondary default params requested. Using secondary default params" << std::endl;
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.1); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 100); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.001); // set t
-        }
-      }
-      else if(numTotalRuns == -3) { // assume that by now, there's something wrong with the lib, boost it upwards
-        // lib scaling factors
-        for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
-          gsl_vector_set(initGuess, this->LIB_SIZE_SCALING_FACTOR_START_IDX + cellIdx, 1.5);
-        }
-
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.1); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 100); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.001); // set t
-        }
-      }
-      else if(numTotalRuns == -4) { // assume that by now, there's something wrong with the lib, boost it upwards
-        // lib scaling factors
-        for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
-          gsl_vector_set(initGuess, this->LIB_SIZE_SCALING_FACTOR_START_IDX + cellIdx, 2);
-        }
-
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.05); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 1000); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.05); // set t
-        }
-      }
-      else if(numTotalRuns == -5) { // assume that by now, there's something wrong with the lib, try multiples of libRatio
-        // lib scaling factors
-        int initGuessIdx = this->LIB_SIZE_SCALING_FACTOR_START_IDX;
-        double lib = 0;
-        for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
-          for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
-            lib = (*this->hmmVec)[hmmIdx]->calcLibScalingFactorsToTotalRatio(cellIdx) * 1;
-            gsl_vector_set(initGuess, initGuessIdx, lib);
-            initGuessIdx += 1;
-          }
-        }
-
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.01); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 500); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.01); // set t
-        }
-      }
-      else if(numTotalRuns == -6) { // assume that by now, there's something wrong with the lib, try multiples of libRatio
-        // lib scaling factors
-        int initGuessIdx = this->LIB_SIZE_SCALING_FACTOR_START_IDX;
-        double lib = 0;
-        for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
-          for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
-            lib = (*this->hmmVec)[hmmIdx]->calcLibScalingFactorsToTotalRatio(cellIdx) * 1;
-            gsl_vector_set(initGuess, initGuessIdx, lib);
-            initGuessIdx += 1;
-          }
-        }
-
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.1); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 100); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.001); // set t
-        }
-      }
-      else if(numTotalRuns == -7) { // assume that by now, there's something wrong with the lib, try multiples of libRatio
-        // lib scaling factors
-        int initGuessIdx = this->LIB_SIZE_SCALING_FACTOR_START_IDX;
-        double lib = 0;
-        for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
-          for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
-            lib = (*this->hmmVec)[hmmIdx]->calcLibScalingFactorsToTotalRatio(cellIdx) * 1;
-            gsl_vector_set(initGuess, initGuessIdx, lib);
-            initGuessIdx += 1;
-          }
-        }
-
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.05); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 1000); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.05); // set t
-        }
-      }
-      else if(numTotalRuns == -8) { // assume that by now, there's something wrong with the lib, try multiples of libRatio
-        // lib scaling factors
-        int initGuessIdx = this->LIB_SIZE_SCALING_FACTOR_START_IDX;
-        double lib = 0;
-        for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
-          for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
-            lib = (*this->hmmVec)[hmmIdx]->calcLibScalingFactorsToTotalRatio(cellIdx) * 1.5;
-            gsl_vector_set(initGuess, initGuessIdx, lib);
-            initGuessIdx += 1;
-          }
-        }
-
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.01); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 500); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.01); // set t
-        }
-      }
-      else if(numTotalRuns == -9) { // assume that by now, there's something wrong with the lib, try multiples of libRatio
-        // lib scaling factors
-        int initGuessIdx = this->LIB_SIZE_SCALING_FACTOR_START_IDX;
-        double lib = 0;
-        for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
-          for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
-            lib = (*this->hmmVec)[hmmIdx]->calcLibScalingFactorsToTotalRatio(cellIdx) * 1.5;
-            gsl_vector_set(initGuess, initGuessIdx, lib);
-            initGuessIdx += 1;
-          }
-        }
-
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.1); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 100); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.001); // set t
-        }
-      }
-      else if(numTotalRuns == -10) { // assume that by now, there's something wrong with the lib, try multiples of libRatio
-        // lib scaling factors
-        int initGuessIdx = this->LIB_SIZE_SCALING_FACTOR_START_IDX;
-        double lib = 0;
-        for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
-          for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
-            lib = (*this->hmmVec)[hmmIdx]->calcLibScalingFactorsToTotalRatio(cellIdx) * 1.5;
-            gsl_vector_set(initGuess, initGuessIdx, lib);
-            initGuessIdx += 1;
-          }
-        }
-
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.05); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 1000); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.05); // set t
-        }
-      }
-      else if(numTotalRuns == -11) { // assume that by now, there's something wrong with the lib, try multiples of libRatio
-        // lib scaling factors
-        int initGuessIdx = this->LIB_SIZE_SCALING_FACTOR_START_IDX;
-        double lib = 0;
-        for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
-          for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
-            lib = (*this->hmmVec)[hmmIdx]->calcLibScalingFactorsToTotalRatio(cellIdx) * 2;
-            gsl_vector_set(initGuess, initGuessIdx, lib);
-            initGuessIdx += 1;
-          }
-        }
-
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.01); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 500); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.01); // set t
-        }
-      }
-      else if(numTotalRuns == -12) { // assume that by now, there's something wrong with the lib, try multiples of libRatio
-        // lib scaling factors
-        int initGuessIdx = this->LIB_SIZE_SCALING_FACTOR_START_IDX;
-        double lib = 0;
-        for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
-          for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
-            lib = (*this->hmmVec)[hmmIdx]->calcLibScalingFactorsToTotalRatio(cellIdx) * 2;
-            gsl_vector_set(initGuess, initGuessIdx, lib);
-            initGuessIdx += 1;
-          }
-        }
-
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.1); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 100); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.001); // set t
-        }
-      }
-      else if(numTotalRuns == -13) { // assume that by now, there's something wrong with the lib, try multiples of libRatio
-        // lib scaling factors
-        int initGuessIdx = this->LIB_SIZE_SCALING_FACTOR_START_IDX;
-        double lib = 0;
-        for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
-          for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
-            lib = (*this->hmmVec)[hmmIdx]->calcLibScalingFactorsToTotalRatio(cellIdx) * 2;
-            gsl_vector_set(initGuess, initGuessIdx, lib);
-            initGuessIdx += 1;
-          }
-        }
-
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.05); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 1000); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.05); // set t
-        }
-      }
-      else if(numTotalRuns == -14) { // assume that by now, there's something wrong with the lib, try multiples of libRatio
-        // lib scaling factors
-        int initGuessIdx = this->LIB_SIZE_SCALING_FACTOR_START_IDX;
-        double lib = 0;
-        for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
-          for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
-            lib = (*this->hmmVec)[hmmIdx]->calcLibScalingFactorsToTotalRatio(cellIdx) * 0.5;
-            gsl_vector_set(initGuess, initGuessIdx, lib);
-            initGuessIdx += 1;
-          }
-        }
-
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.01); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 500); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.01); // set t
-        }
-      }
-      else if(numTotalRuns == -15) { // assume that by now, there's something wrong with the lib, try multiples of libRatio
-        // lib scaling factors
-        int initGuessIdx = this->LIB_SIZE_SCALING_FACTOR_START_IDX;
-        double lib = 0;
-        for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
-          for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
-            lib = (*this->hmmVec)[hmmIdx]->calcLibScalingFactorsToTotalRatio(cellIdx) * 0.5;
-            gsl_vector_set(initGuess, initGuessIdx, lib);
-            initGuessIdx += 1;
-          }
-        }
-
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.1); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 100); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.001); // set t
-        }
-      }
-      else if(numTotalRuns == -16) { // assume that by now, there's something wrong with the lib, try multiples of libRatio
-        // lib scaling factors
-        int initGuessIdx = this->LIB_SIZE_SCALING_FACTOR_START_IDX;
-        double lib = 0;
-        for(unsigned int hmmIdx = 0; hmmIdx < this->hmmVec->size(); hmmIdx++) {
-          for(int cellIdx = 0; cellIdx < this->NUM_LIBS_TO_EST; cellIdx++) {
-            lib = (*this->hmmVec)[hmmIdx]->calcLibScalingFactorsToTotalRatio(cellIdx) * 0.5;
-            gsl_vector_set(initGuess, initGuessIdx, lib);
-            initGuessIdx += 1;
-          }
-        }
-
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.05); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 1000); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.05); // set t
-        }
-      }
-      else {
-        // shared transition parameters
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 0, 0.01); // beta
-        gsl_vector_set(initGuess, this->SHARED_TRANSITION_PROB_START_IDX + 1, 500); // lambda
-
-        // branch lengths
-        for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-          gsl_vector_set(initGuess, this->BRANCH_LENGTH_START_IDX + cellIdx, 0.01); // set t
-        }
-      }*/
     }
-
     return;
   }
   if(iter == 0) {
@@ -913,17 +528,13 @@ double AllInd3TrParam2DegPolyHMM::baumWelchLeastSquares_calcSumSqResid(const gsl
 
   // first check if any probs are too small (bfgs optim step gets stuck when values are too close to 0)
   double probMin = gsl_vector_min(probs);
-  //if(probMin < 1e-3 || gsl_isnan(probMin)) {
-  //if(probMin < 1e-4 || gsl_isnan(probMin)) {
   if(probMin < 1e-5 || gsl_isnan(probMin)) {
-  //if(probMin < 1e-6 || gsl_isnan(probMin)) {
-  //if(probMin < 1e-8 || gsl_isnan(probMin)) { // bwe8
     return GSL_NAN;
   }
 
   // shortcut for any rates becoming too large
   double probMax = gsl_vector_max(probs);
-  if(probMax > 10000.0 || gsl_isnan(probMax)) { // pme4
+  if(probMax > 10000.0 || gsl_isnan(probMax)) {
     return GSL_NAN;
   }
 
@@ -932,7 +543,6 @@ double AllInd3TrParam2DegPolyHMM::baumWelchLeastSquares_calcSumSqResid(const gsl
   int hmmBranchIdx = (*this->hmmVec)[0]->BRANCH_LENGTH_START_IDX - (*this->hmmVec)[0]->NUM_LIBS_TO_EST;
   int numHMMParams = (*this->hmmVec)[0]->getNumParamsToEst() - (*this->hmmVec)[0]->NUM_LIBS_TO_EST;
   gsl_vector* currHMMProbs = gsl_vector_alloc(numHMMParams);
-  //gsl_vector* oldHMMProbs = gsl_vector_alloc((*this->hmmVec)[0]->getNumParamsToEst());
 
   double beta  = gsl_vector_get(probs, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 0);
   double lambda = gsl_vector_get(probs, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1);
@@ -946,22 +556,17 @@ double AllInd3TrParam2DegPolyHMM::baumWelchLeastSquares_calcSumSqResid(const gsl
     // get apropriate branch length
     currT = gsl_vector_get(probs, this->BRANCH_LENGTH_START_IDX - this->NUM_LIBS_TO_EST + hmmIdx);
 
-    //std::cout << currLib0BFGS << ", " << currLib1BFGS << ", " << alphaBFGS << ", " << betaBFGS << ", " << gammaBFGS << ", " << currT2BFGS << ", " << currT3BFGS << std::endl;
     // set everything into currHMMProbs
     gsl_vector_set(currHMMProbs, hmmTrIdx + 0, beta);
     gsl_vector_set(currHMMProbs, hmmTrIdx + 1, lambda);
     gsl_vector_set(currHMMProbs, hmmBranchIdx + 0, currT);
-    //std::cout << beta << ", " << lambda << ", " << currT << std::endl;
-    //printColVector(currHMMProbs);
 
     // call TwoCell3TrParam2DegPolyHMM::baumWelchLeastSquares_f(gsl_vector* probs)
-    //gsl_vector_memcpy(oldHMMProbs, (*this->hmmVec)[hmmIdx]->getParamsToEst());
     status = (*this->hmmVec)[hmmIdx]->baumWelchLeastSquares_f(currHMMProbs);
     if(gsl_isnan(status)) {
       fprintf(stderr, "ERROR: could not set transition matrix in baumWelchLeastSquares_f\t|\t");
       printRowVector(stderr, currHMMProbs);
       sumSqResid = status;
-      //(*this->hmmVec)[hmmIdx]->setParamsToEst(oldHMMProbs); // reset to old params if they failed Wed 26 May 2021 05:28:45 PM PDT don't do this
       break;
     }
 
@@ -978,7 +583,6 @@ double AllInd3TrParam2DegPolyHMM::baumWelchLeastSquares_calcSumSqResid(const gsl
   }
   gsl_vector_free(probs);
   gsl_vector_free(currHMMProbs);
-  //gsl_vector_free(oldHMMProbs);
   return sumSqResid;
 }
 
@@ -1016,28 +620,8 @@ void AllInd3TrParam2DegPolyHMM::saveBaumWelchEstsIntoParamsToEst(gsl_vector* var
 
 // same as convertProbToParam, just without library sizes
 void AllInd3TrParam2DegPolyHMM::baumWelchLeastSquares_convertProbToParam(gsl_vector* dest, const gsl_vector* src) const {
-  ////std::cout << "AllInd3TrParam2DegPolyHMM::baumWelchLeastSquares_convertProbToParam" << std::endl;
-  //// shared transition parameters
-  //double a = this->getAlpha();
-  //double b = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 0);
-  //double g = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 1);
-  //double c = (b * this->getKploidy() + g - 1);
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 0, log(-b * (1-2*a) * (double) this->getKploidy() / c)); // set y
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 1, log(-g * (1-2*a) / c)); // set z
-
-  //// branch lengths
-  //double d = (double) (*this->depthsVec)[0]->maxWindowSize;
-  //double t = 0;
-  //for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-  //  t = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX + cellIdx + 0) / d;
-  //  c = (d * t - 1);
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX + cellIdx, log(-(d * t) / c)); // set T
-  //}
-
-  //std::cout << "AllInd3TrParam2DegPolyHMM::baumWelchLeastSquares_convertProbToParam" << std::endl;
   // shared transition parameters
   double beta = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 0);
-  //double lambda = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1);
   double lambda = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1);
   gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 0, log(beta)); // set y
   gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1, log(lambda / 1.0e6)); // set z
@@ -1051,29 +635,10 @@ void AllInd3TrParam2DegPolyHMM::baumWelchLeastSquares_convertProbToParam(gsl_vec
 }
 
 void AllInd3TrParam2DegPolyHMM::baumWelchLeastSquares_convertParamToProb(gsl_vector* dest, const gsl_vector* src) const {
-  ////std::cout << "AllInd3TrParam2DegPolyHMM::baumWelchLeastSquares_convertParamToProb" << std::endl;
-  //// shared transition parameters
-  //double a = this->getAlpha();
-  //double y = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 0);
-  //double z = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX + 1);
-  //double c = 1 - 2.0*a + exp(y) + exp(z);
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 0, exp(y) / ((double) this->getKploidy() * c)); // beta
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX + 1, exp(z) / c); // gamma
-
-  //// pairwise branch lengths
-  //double T = 0;
-  //for(int cellIdx = 0; cellIdx < this->NUM_CELLS; cellIdx++) {
-  //  T = gsl_vector_get(src, this->BRANCH_LENGTH_START_IDX + cellIdx);
-  //  c = 1.0 / (1 + exp(T));
-  //  gsl_vector_set(dest, this->BRANCH_LENGTH_START_IDX + cellIdx + 0, exp(T) * c); // set t1
-  //}
-
-  //std::cout << "AllInd3TrParam2DegPolyHMM::baumWelchLeastSquares_convertParamToProb" << std::endl;
   // shared transition parameters
   double y = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 0);
   double z = gsl_vector_get(src, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1);
   gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 0, exp(y)); // beta
-  //gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1, exp(z)); // lambda
   gsl_vector_set(dest, this->SHARED_TRANSITION_PROB_START_IDX - this->NUM_LIBS_TO_EST + 1, exp(z) * 1e6); // lambda
 
   // pairwise branch lengths

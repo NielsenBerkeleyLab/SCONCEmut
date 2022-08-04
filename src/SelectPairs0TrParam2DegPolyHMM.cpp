@@ -24,11 +24,7 @@ void SelectPairs0TrParam2DegPolyHMM::makeHMMPairs(gsl_vector* meanVarianceCoefVe
     (*this->hmmVec)[hmmIdx] = nullptr;
   }
 
-  //std::vector<DepthPair*>* currDepths = nullptr;
-  //gsl_vector* currMeanVarCoefVec = nullptr; // make them all have their own copies of this vector
-  //gsl_vector* currFixedParams = nullptr;
   int hmmIdx = 0;
-  //int refCell = 0;
   int nearestCell = 0; // nearestCell does not change
   int leftCell = 0; // leftCell and rightCell might swap
   int rightCell = 0;
@@ -49,7 +45,6 @@ void SelectPairs0TrParam2DegPolyHMM::makeHMMPairs(gsl_vector* meanVarianceCoefVe
     }
     // init hmm's for its numPairsToSummarize nearest cells (unless already alloc)
     for(int nearestCellIdx = 0; nearestCellIdx < this->numPairsToSummarize && nearestCellIdx < (int) this->stage1NearestCellIdxMat->size2; nearestCellIdx++) {
-      //refCell = i;
       if(this->ordering == IndThenPairs2Stages3TrParam2DegPolyHMM::ORDERING_RANDOM) {
         nearestCell = (*randomOrdering)[nearestCellIdx];
       }
@@ -69,12 +64,6 @@ void SelectPairs0TrParam2DegPolyHMM::makeHMMPairs(gsl_vector* meanVarianceCoefVe
         leftCell = rightCell;
         rightCell = swap;
       }
-      //if(refCell > nearestCell) {
-      //  swap = refCell;
-      //  refCell = nearestCell;
-      //  nearestCell = swap;
-      //}
-      //hmmIdx = this->getHMMIdxFromCellPair(refCell, nearestCell);
       hmmIdx = this->getHMMIdxFromCellPair(leftCell, rightCell);
       this->storeHMMIdxForCell(i, hmmIdx);
       if((*this->hmmVec)[hmmIdx] != nullptr) {
@@ -82,27 +71,6 @@ void SelectPairs0TrParam2DegPolyHMM::makeHMMPairs(gsl_vector* meanVarianceCoefVe
       }
 
       this->makeOneHMMPair(leftCell, rightCell, preallocIntermediates);
-      //currDepths = new std::vector<DepthPair*>();
-      ////currDepths->push_back((*this->depthsVec)[refCell]);
-      ////currDepths->push_back((*this->depthsVec)[nearestCell]);
-      //currDepths->push_back((*this->depthsVec)[leftCell]);
-      //currDepths->push_back((*this->depthsVec)[rightCell]);
-
-      //currFixedParams = gsl_vector_alloc(this->fixedParams->size);
-      //gsl_vector_memcpy(currFixedParams, this->fixedParams);
-      //TwoCell0TrParam2DegPolyHMM* hmm = new TwoCell0TrParam2DegPolyHMM(currDepths, currFixedParams, this->getKploidy(), preallocIntermediates);
-      //(*this->hmmVec)[hmmIdx] = hmm;
-
-      //// do rest of HMM set up (usually happens in main.cpp)
-      //currMeanVarCoefVec = gsl_vector_alloc(meanVarianceCoefVec->size);
-      //gsl_vector_memcpy(currMeanVarCoefVec, meanVarianceCoefVec);
-      //hmm->setMeanVarianceFn(currMeanVarCoefVec);
-      //hmm->setTransition(transitionParams); // this vector isn't saved anywhere
-      //hmm->setLibScalingFactorsToTotalRatio();
-      //hmm->setAlpha(this->getAlpha());
-
-      ////this->setLibScalingFactors(refCell, nearestCell, hmm->getLibScalingFactor(0), hmm->getLibScalingFactor(1));
-      //this->setLibScalingFactors(leftCell, rightCell, hmm->getLibScalingFactor(0), hmm->getLibScalingFactor(1));
       hmmIdx++;
     }
   }
@@ -117,10 +85,6 @@ void SelectPairs0TrParam2DegPolyHMM::print(FILE* stream) {
     printMatrix(stream, this->stage1NearestCellIdxMat);
   }
 }
-
-//void SelectPairs0TrParam2DegPolyHMM::decodeStatSummaryOneCellAcrossPairs(int summaryMethod, int cellNum) {
-//  // TODO HERE
-//}
 
 // override specifically so can call resetSkippedParams
 SelectPairs0TrParam2DegPolyHMM* SelectPairs0TrParam2DegPolyHMM::bfgs(gsl_vector* initGuess, int maxIters, bool verbose, bool debug) {
