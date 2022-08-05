@@ -31,10 +31,6 @@ totalReadsTab <- readsTab[,cols[grepl("totalNumReads", cols)]]
 # select out numMajorAlleleReads matrix
 majorReadsTab <- readsTab[,cols[grepl("numPooledMajorAlleleReads", cols)]]
 
-## subtract to get numMinorAlleleReads mat
-#minorReadsTab <- totalReadsTab - majorReadsTab
-
-
 # allele freq of major allele should be 1 (minus error) ==> care about numMajorReads
 f <- 1 - errRate # allele frequency, with error
 
@@ -81,70 +77,4 @@ resDf <- do.call(rbind, lapply(optimRes_brent, FUN=function(res) {as.data.frame(
 #                                    NA's   :31      NA's   :31
 # > sprintf("%.20f", resDf$par[1])
 # [1] "9.68663475621146297101"
-
-
-
-stop()
-##########################
-
-## Arg 1: diploid total reads matrix
-## Arg 2: diploid num major allele reads matrix
-## Arg 3: output file 
-
-loglikeFunMax <- function(param) {
-  w <- param[1] # omega
-  alpha <- f*w
-  beta <- (1-f)*w
- 
-  # alpha and beta must be nonnegative
-  if(alpha < 0 || beta < 0) {
-    return(-1e300)
-  }
-  loglik <- 0
-  for(snpIdx in 1:nrow(totalReadsTab)) {
-    for(cellIdx in 1:ncol(totalReadsTab)) {
-      total <- totalReadsTab[snpIdx, cellIdx]
-      major <- majorReadsTab[snpIdx, cellIdx]
-      if(is.na(total) && is.na(major)) {
-        next
-      }
- 
-      prob <- dbbinom(major, total, alpha, beta, log=T)
-      loglik <- loglik + prob
-    }
-  }
-  return(loglik)
-}
-
-
-print(system.time(res <- optim(10,loglikeFunMax, control=list(fnscale=-1))))
-print(system.time(res <- optim(c(10,10),loglikeFunMax, control=list(fnscale=-1))))
-#print(res)
-sprintf("%.20f", res$par)
-alphaBetaTab <- data.frame(c("alpha", "beta"), res$par)
-write.table(format(alphaBetaTab, digits=10), file=outputFile, quote=F, sep="=", col.names=F, row.names=F)
-
-# calc ll for all snps and save to file
-# TODO
-
-loglikeFunMaxApply <- function(param) {
-  alpha <- param[1]
-  beta <- param[2]
-  # alpha and beta must be nonnegative
-  if(alpha < 0 | beta < 0) {
-    return(-1e300)
-  }
-  #loglik <- sum(sapply(1:1000000, FUN=function(snpIdx) {
-  loglik <- sum(sapply(1:nrow(totalReadsTab), FUN=function(snpIdx) {
-    sum(sapply(1:ncol(totalReadsTab), FUN=function(cellIdx) {
-      total <- totalReadsTab[snpIdx, cellIdx]
-      major <- majorReadsTab[snpIdx, cellIdx]
-      if(is.na(total)) {
-        return(0)
-      }
-      dbbinom(major, total, alpha, beta, log=T)
-    }))
-  }))
-  loglik
-}
 

@@ -96,19 +96,8 @@ parser.add_argument('-t', '--type', type=str,
                     help='Type (Diploid or Tumor)', required = True)
 args = vars(parser.parse_args())
 
-#out_file = ''.join(['/space/s2/sarahj32/rotation/fixed_read_counts/', args['type'], '_chr_', args['id'], '_read_allele_counts.tsv'])
-#cell_file = ''.join(['/space/s2/sarahj32/rotation/fixed_read_counts/cell_summary', args['type'], '_chr_', args['id'], '.tsv'])
-out_file = ''.join(['/space/s2/sarahj32/rotation/pooledMajorAlleleReadCounts/', args['type'], '_chr_', args['id'], '_read_allele_counts.tsv'])
-cell_file = ''.join(['/space/s2/sarahj32/rotation/pooledMajorAlleleReadCounts/cell_summary', args['type'], '_chr_', args['id'], '.tsv'])
+out_file = ''.join(['./pooledMajorAlleleReadCounts/', args['type'], '_chr_', args['id'], '_read_allele_counts.tsv'])
+cell_file = ''.join(['./pooledMajorAlleleReadCounts/cell_summary', args['type'], '_chr_', args['id'], '.tsv'])
 
 pileup_read_summary(args['file_path'], out_file, cell_file)
 
-# testing:
-# file_path = '/space/s2/sarahj32/rotation/chromosome_pileup_files/tumor_chr_2_file'
-# type = 'tumor'
-# id = '2'
-
-# out_file = ''.join(['/space/s2/sarahj32/rotation/fixed_read_counts/', type, '_chr_', id, '_read_allele_counts.tsv'])
-# cell_file = ''.join(['/space/s2/sarahj32/rotation/fixed_read_counts/cell_summary', type, '_chr_', id, '.tsv'])
-
-# pileup_read_summary(file_path, out_file, cell_file)

@@ -23,7 +23,6 @@ cutoff.95 <- tab_frac[min(which(tab_frac$fracInDbsnp >= 0.95)), "llrCutoff"]
 cutoff1 <- tab_frac[min(which(tab_frac$fracInDbsnp >= 1)), "llrCutoff"]
 
 fillColors <- c("#e98686", "#22a5e3") # pink, blue
-#names(fillColors) <- c("not in dbSNP", "in dbSNP")
 
 p <- ggplot(tab_frac_m, aes(x=llrCutoff, y=value, fill=variable)) + geom_bar(stat="identity", position="stack") + geom_text(data=tab_num_m, aes(x=llrCutoff, y=ifelse(variable == "numNotInDbsnp", 1, 0), label=value, angle=90, hjust=ifelse(variable == "numNotInDbsnp", 1, 0)), colour="black", inherit.aes=F) + theme_bw() + labs(x="loglikelihood ratio cutoff", y="fraction of diploid sites in dbSNP above LLR cutoff", fill="dbSNP\nmembership") + scale_fill_manual(labels=c("not in dbSNP", "in dbSNP"), values=fillColors) + geom_vline(xintercept=cutoff.95, color="blue")
 ggsave(paste0(args[1], "_llrCutoffCounts_labeled.png"), width=6, height=5)
@@ -44,3 +43,4 @@ toSave <- plot_grid(pGrid, legend, ncol=1, rel_heights=c(1, 0.05))
  
 png(paste0(args[1], "_llrCutoffCounts_fracCount.png"), width=8, height=5.5, res=600, units="in"); plot(toSave); dev.off()
 pdf(paste0(args[1], "_llrCutoffCounts_fracCount.pdf"), width=8, height=5.5); plot(toSave); dev.off()
+

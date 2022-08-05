@@ -10,7 +10,6 @@ indvBedList=$(find dbsnpIntersection_tumor -maxdepth 1 -name "*_withPooledMajorA
 bedops -m $indvBedList | bedops --chop 1 - > dbsnpIntersection_tumor/pooledTumorCoords.bed
 
 # filter for positions that have diploid data
-#bedtools intersect -sorted <(sort -k1,1 -k2,2n dbsnpIntersection/pooledDiploidCoords.bed) <(sort -k1,1 -k2,2n dbsnpIntersection_tumor/pooledTumorCoords.bed) > dbsnpIntersection_tumor/pooledDiploidTumorCoords.bed
 bedtools intersect -sorted -a dbsnpIntersection/pooledDiploidCoords.bed -b dbsnpIntersection_tumor/pooledTumorCoords.bed > dbsnpIntersection_tumor/pooledDiploidTumorCoords.bed
 
 # and add dbsnp status to it

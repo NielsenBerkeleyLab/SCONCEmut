@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# clean version of fullPipeline.sh
+# record of commands used to analyze single cell sequencing from Navin 2011
+# assumes fastq files have already been cleaned and aligned into bam files
 
 export ref="/space/s2/sandra/hg19/hg19_lite.fa"
 
 # prep
-bamlist=/space/s2/sandra/alleleFreqHmm/Navin_Nature2011_hg19/diploidBamList
-pileup=/space/s2/sandra/alleleFreqHmm/Navin_Nature2011_hg19/monovarOutput/diploid.mpileup.gz
+bamlist=./Navin_Nature2011_hg19/diploidBamList
+pileup=./Navin_Nature2011_hg19/monovarOutput/diploid.mpileup.gz
 
 
 ####################
@@ -18,7 +19,7 @@ samtools mpileup -Q 0 -d 10000 -f "$ref" -q 40 -b "$bamlist" | gzip > "$pileup" 
 # split pooled diploid pileup from full genome into pooled diploid chrs
 parallel -j 10 zgrep -E -w chr{} "$pileup" > pooledPileupFiles/diploid_chr_{}.mpileup ::: `seq 22`
 
-# find pooled diploid major allele (./calc_reads_parallel.sh) TODO missing chrX,Y since sometimes labelled chr22. just throw out for now
+# find pooled diploid major allele (./calc_reads_parallel.sh) note: missing chrX,Y since sometimes labelled chr22. exclude
 for i in $(seq 1 22) ; do
   echo "python3 find_major_allele.py -f pooledPileupFiles/diploid_chr_"$i".mpileup -t diploid -i "$i" > pooledMajorAlleleReadCounts/diploid_chr_"$i".err 2>&1"
 done | parallel -j 10
