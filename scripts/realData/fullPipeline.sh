@@ -9,6 +9,13 @@ export ref="/space/s2/sandra/hg19/hg19_lite.fa"
 bamlist=./Navin_Nature2011_hg19/diploidBamList
 pileup=./Navin_Nature2011_hg19/monovarOutput/diploid.mpileup.gz
 
+# compile c++ programs
+if [[ ! -f calcLLR ]] ; then
+  g++ calcLLR.cpp -o calcLLR
+fi
+if [[ ! -f fitBetaBinomTumor ]] ; then
+  g++ fitBetaBinomTumor.cpp `gsl-config --cflags --libs` -o fitBetaBinomTumor
+fi
 
 ####################
 # find major allele pooled across all diploid cells
