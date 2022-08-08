@@ -20,7 +20,6 @@ library(scales)
 convertCellNumToNewickLabel <- function(cellFilename) { # ex simu_cancer_cell_0.hg19_lite.depth
   cellNum <- as.numeric(str_extract(str_extract(cellFilename, "cell_[0-9]+"), "[0-9]+"))
   label <- 128 - cellNum
-  #label <- 5 - cellNum
   label
 }
 
@@ -30,9 +29,7 @@ calcTreeBranches <- function(mrcaMat, distMat, nodeDepths, branchLength) {
   do.call(rbind, lapply(1:(ncol(mrcaMat)), FUN=function(left) {
     do.call(rbind, lapply(1:ncol(mrcaMat), FUN=function(right) {
       currMrca <- mrcaMat[left, right]
-      #t1 <- nodeDepths[currMrca] + branchLength # add for time before first split
-      t1 <- nodeDepths[currMrca]# + branchLength # add for time before first split Thu 30 Jun 2022 11:30:16 AM PDT I think this might be wrong?
-      #t1 <- nodeDepths[currMrca] + 1# + branchLength # add for time before first split Thu 30 Jun 2022 11:30:16 AM PDT I think this might be wrong?
+      t1 <- nodeDepths[currMrca]
       t2 <- distMat[left, currMrca]
       t3 <- distMat[right, currMrca]
       results <- data.frame(left=left, right=right, t1=t1, t2=t2, t3=t3, t2_t3=t2+t3)
@@ -84,13 +81,6 @@ getTreeBranches <- function(newickString, branchLength, hmmFile, forceRecalc=F) 
   # cell0/cell1 correspond to indv cell filenames
   hmmParams_wide <- dcast(hmmParamsRaw, cell0 + cell1 ~ variable)
   hmmParams_wide$t2_t3 <- hmmParams_wide$t2 + hmmParams_wide$t3
-  #hmmParams_wide$total <- hmmParams_wide$t1 + hmmParams_wide$t2 + hmmParams_wide$t3
-  ##hmmParams_wide$total <- hmmParams_wide$t1 + max(hmmParams_wide$t2,hmmParams_wide$t3)
-  ##hmmParams_wide$total <- hmmParams_wide$t2 + hmmParams_wide$t3
-  #hmmParams_wide$t1_sc <- (hmmParams_wide$t1) / (hmmParams_wide$total)
-  #hmmParams_wide$t2_sc <- (hmmParams_wide$t2) / (hmmParams_wide$total)
-  #hmmParams_wide$t3_sc <- (hmmParams_wide$t3) / (hmmParams_wide$total)
-  #hmmParams_wide$t2_t3_sc <- (hmmParams_wide$t2 + hmmParams_wide$t3) / (hmmParams_wide$total)
   hmmParams_wide_m <- melt(hmmParams_wide, id.vars=c("cell0", "cell1"))
 
   hmmParams_wide_m$left <- sapply(hmmParams_wide_m$cell0, convertCellNumToNewickLabel)
@@ -138,8 +128,7 @@ getTruePerBranchMutCounts <- function(newickString, branchLength, paramSet, forc
     cell <- cellNames[cellIdx]
     numMuts <- sum(alleleCountsList[[cellIdx]][,2] != 0)
     left <- convertCellNumToNewickLabel(cell)
-    #branchLength <- nodeDepths[left] + branchLength
-    branchLength <- nodeDepths[left]# + branchLength Thu 30 Jun 2022 03:01:21 PM PDT I think this may be wrong?
+    branchLength <- nodeDepths[left]
     data.frame(cell=cell, t_muts=numMuts, left=left, true=branchLength)
   }))
 
@@ -248,8 +237,7 @@ getObservedPerBranchMutCounts <- function(newickString, branchLength, paramSet, 
     cell <- cellNames[cellIdx]
     numMuts <- sum(readsCountsList[[cellIdx]][,2] != 0)
     left <- convertCellNumToNewickLabel(cell)
-    #branchLength <- nodeDepths[left] + branchLength
-    branchLength <- nodeDepths[left]# + branchLength Thu 30 Jun 2022 03:01:21 PM PDT I think this may be wrong?
+    branchLength <- nodeDepths[left]
     data.frame(cell=cell, t_muts=numMuts, left=left, true=branchLength)
   }))
 
@@ -405,7 +393,6 @@ makeIndvTrueObsInferredCorrPlot <- function(trueIndvMutCounts, obsIndvMutCounts,
       data.frame(branch=br, variable = var, label=lm_eqn(subset(allMutCounts_m, branch == br & variable == var), value ~ branchLength))
     }))
   }))
-  #pNumMutsVsBranches <- ggplot(allMutCounts_m, aes(x=branchLength, y=value, colour=branch)) + geom_point() + facet_grid(variable ~ branch) + theme_bw() + labs(y="num mutations", title="num mutations vs branch length, by observation stage") + geom_text(data=lmStr, aes(x=-Inf, y=Inf, label=label, hjust=0, vjust=1), parse=TRUE, colour="black", show.legend=F) + geom_smooth(method="lm", colour="gray35", show.legend=F)
   pNumMutsVsBranches <- ggplot(allMutCounts_m, aes(x=branchLength, y=value, colour=branch)) + geom_point() + facet_grid(variable ~ branch, scales="free") + theme_bw() + labs(y="num mutations", title=datasetName) + geom_text(data=lmStr, aes(x=-Inf, y=Inf, label=label, hjust=0, vjust=1), parse=TRUE, colour="black", show.legend=F) + geom_smooth(method="lm", colour="gray35", show.legend=F)
 
   obsVsTrue_m <- melt(allMutCounts[,c(mergeCols, "numTrue", "numObserved")], id.vars=c("left", "branch", "branchLength", "numTrue"))
@@ -544,9 +531,6 @@ makePairedTrueObsCorrPlot <- function(truePairedMutCounts, obsPairedMutCounts, d
   list(pNumMutsVsBranches=pNumMutsVsBranches, mutCorr=pGrid)
 }
 
-
-
-
 # based on counts from running inference
 getInferredPerBranchMutCounts <- function(newickString, branchLength, paramSet, forceRecalc=F) {
   outputFile <- paste0(hmmFile, ".inferredMutCounts")
@@ -578,7 +562,6 @@ getInferredPerBranchMutCounts <- function(newickString, branchLength, paramSet, 
   allIndEstMutCounts$cell <- indHmmNames
   allIndEstMutCounts$variable <- "t_muts"
   allIndEstMutCounts$left <- sapply(allIndEstMutCounts$cell, convertCellNumToNewickLabel)
-  #allIndEstMutCounts$true <- nodeDepths[allIndEstMutCounts$left] + branchLength
   allIndEstMutCounts$true <- nodeDepths[allIndEstMutCounts$left]# + branchLength Thu 30 Jun 2022 03:01:45 PM PDT I think this might be wrong?
 
   # cell0 | cell1 | t1
@@ -594,9 +577,6 @@ getInferredPerBranchMutCounts <- function(newickString, branchLength, paramSet, 
   colnames(analyzedHmmNames) <- c("hmmIdx", "cell0", "cell1")
   paramIdxToExtract <- do.call(c, lapply(analyzedHmmNames$hmmIdx, FUN=function(i) {c(3*i, (3*i)+1, (3*i)+2)})) # don't extract hmms we skipped
   paramIdxToExtract <- paramIdxToExtract + 1 # paramsToEst is 0 indexed, R vector is 1 indexed
-  #unlabeledHmmParamsRaw <- read.table(text=system(paste0("/bin/bash -c ", shQuote(sprintf("sed '1,/FINAL HMM/d' %s | tac | sed '/paramsToEst/q' | tac | sed '/fixedParams/q' | tail -n +2 | head -n -2", hmmFile))), intern=T))
-  #hmmParamsRaw <- data.frame(cell0=do.call(c, lapply(analyzedHmmNames$cell0, rep, 3)), cell1=do.call(c, lapply(analyzedHmmNames$cell1, rep, 3)), value=unlabeledHmmParamsRaw[paramIdxToExtract,])
-  #hmmParamsRaw$variable <- c("t1_muts", "t2_muts", "t3_muts")
 
   # allPairedEstMutCounts
   unlabeledAllPairedEstMutCounts <- read.table(text=system(paste0("/bin/bash -c ", shQuote(sprintf("sed '1,/FINAL HMM/d' %s | tac | sed '/allPairedEstMutCounts/q' | tac | sed '/IndThenPairs2Stages3TrParam2DegPolyHMMWithMuts/q' | tail -n +2 | head -n -2", hmmFile))), intern=T))
@@ -613,7 +593,6 @@ getInferredPerBranchMutCounts <- function(newickString, branchLength, paramSet, 
   write.table(allPairedEstMutCountsMerged, file=paste0(outputFile, "_pairs.txt"), quote=F, sep="\t", col.names=T, row.names=F)
   list(indv=allIndEstMutCounts, paired=allPairedEstMutCountsMerged)
 }
-
 
 # not per branch
 compareTrueAndObsMutCounts <- function(paramSet, forceRecalc=F) {
@@ -784,7 +763,6 @@ readAllTumorTrueBeds <- function(dataDir, paramSet, numCells) {
   })
   
   newickLabs <- factor(128 - as.numeric(gsub(".$", "", gsub("cancer_cell_", "",str_extract(tumorList$V1, "cancer_cell_[0-9]*.")))))
-  #newickLabs <- factor(1 + as.numeric(gsub(".$", "", gsub("cancer_cell_", "",str_extract(tumorList$V1, "cancer_cell_[0-9]*."))))) # decided cells based on cell file numbers, for cextremes sets it's easier to use these numbers
   
   allDepths <- do.call(rbind, lapply(tumorDepths, FUN=function(x) {x$cn}))
   rownames(allDepths) <- newickLabs
@@ -795,9 +773,6 @@ readAllTumorTrueBeds <- function(dataDir, paramSet, numCells) {
 # returns matrix of inferred copy numbers from outputType ("__sconce__*.bed", "*__mean.bed", "*__median.bed", "*__mode.bed"), rows are cells, cols are genomic positions
 readAllOutputBedFiles <- function(dataDir, paramSet, key, numCells, outputType) {
   outputFilePrefix <- paste0("output_", key, "_", gsub("/", "_", paramSet), "_k", k, "_c", numCells) # based on scAllP_*sh outBase variable
-  if(grepl("Mut", key) & grepl("params[23]", paramSet)) {
-    #outputFilePrefix <- paste0("output_", key, "_reuseMutEsts_shortcut_", gsub("/", "_", paramSet), "_k", k, "_c", numCells) # based on scAllP_*sh outBase variable
-  }
   unfiltFileList <- system(paste0("find ", dataDir, paramSet, " -maxdepth 1 -name \"", outputFilePrefix, outputType, "\" | sort -V"), intern=T)
   tumorDepths <- read.table(paste0(dataDir, paramSet, "/tumor_depths_", numCells), stringsAsFactors=F)$V1
   cellIDs <- str_extract(tumorDepths, "cancer_cell_[0-9]*.")
@@ -822,7 +797,6 @@ readcnp2cnpFile <- function(cnp2cnpFile) {
 ###########################################
 # given mergedTreeBranches, creates a distance matrix based on t2+t3 values for uniqNodes
 createInferred_t2_t3_distMat <- function(mergedTreeBranches, uniqNodes) {
-  #inferredDistMat <- matrix(rep(0, length(uniqNodes)^2), ncol=length(uniqNodes)) # values from .hmm file
   inferredDistMat <- matrix(rep(NA, length(uniqNodes)^2), ncol=length(uniqNodes)) # values from .hmm file
   diag(inferredDistMat) <- 0
   dimnames(inferredDistMat) <- list(uniqNodes, uniqNodes)
@@ -836,7 +810,6 @@ createInferred_t2_t3_distMat <- function(mergedTreeBranches, uniqNodes) {
   inferredDistMat
 }
 createInferred_t1_distMat <- function(mergedTreeBranches, uniqNodes) {
-  #inferredDistMat <- matrix(rep(0, length(uniqNodes)^2), ncol=length(uniqNodes)) # values from .hmm file
   inferredDistMat <- matrix(rep(NA, length(uniqNodes)^2), ncol=length(uniqNodes)) # values from .hmm file
   diag(inferredDistMat) <- 0
   dimnames(inferredDistMat) <- list(uniqNodes, uniqNodes)
@@ -937,7 +910,6 @@ createNJtrees <- function(mergedTreeBranches, paramSet, numCells, key) {
   eucMedianTree <- nj(dist(medianCNs, method="euclidean")) # tree built on euclidean distance btn median copy number profiles
   eucModeTree   <- nj(dist(modeCNs, method="euclidean")) # tree built on euclidean distance btn mode copy number profiles
 
-  #list(eucTrueTree=eucTrueTree, eucSconceTree=eucSconceTree, eucMeanTree=eucMeanTree, eucMedianTree=eucMedianTree, eucModeTree=eucModeTree, cnpTrueTree=cnpTrueTree, cnpSconceTree=cnpSconceTree, cnpMeanTree=cnpMeanTree, cnpMedianTree=cnpMedianTree, cnpModeTree=cnpModeTree, trueDistTree=trueDistTree, inferredDistTree=inferredDistTree)
   list(eucTrueTree=eucTrueTree, eucSconceTree=eucSconceTree, eucMeanTree=eucMeanTree, eucMedianTree=eucMedianTree, eucModeTree=eucModeTree, cnpTrueTree=cnpTrueTree, cnpSconceTree=cnpSconceTree, cnpMeanTree=cnpMeanTree, cnpMedianTree=cnpMedianTree, cnpModeTree=cnpModeTree, zzsTrueTree=zzsTrueTree, zzsSconceTree=zzsSconceTree, zzsMeanTree=zzsMeanTree, zzsMedianTree=zzsMedianTree, zzsModeTree=zzsModeTree, trueDistTree=trueDistTree, inferredDistTree=inferredDistTree)
 }
 
@@ -952,9 +924,6 @@ createNJtreesCompareMuts <- function(mergedTreeBranches, paramSet, numCells, key
   cnpTrueMat <- createCnpDistMat(paste0(trueCnpBase, "_true.cnp2cnp"), paste0(trueCnpBase, "_trueRev.cnp2cnp"))
 
   cnpBase <- paste0(dataDir, "/", paramSet, "/output_", key, "_", gsub("/", "_", paramSet), "_k", k, "_c", numCells)
-  if(grepl("Mut", key) & grepl("params[23]", paramSet)) {
-    #cnpBase <- paste0(dataDir, "/", paramSet, "/output_", key, "_reuseMutEsts_shortcut_", gsub("/", "_", paramSet), "_k", k, "_c", numCells)
-  }
   cnpSconceMat <- createCnpDistMat(paste0(cnpBase, "_roundedsconce.cnp2cnp"), paste0(cnpBase, "_roundedsconceRev.cnp2cnp"))
   cnpMeanMat <- createCnpDistMat(paste0(cnpBase, "_roundedmean.cnp2cnp"), paste0(cnpBase, "_roundedmeanRev.cnp2cnp"))
   if(is.null(cnpSconceMat)) {
@@ -968,9 +937,6 @@ createNJtreesCompareMuts <- function(mergedTreeBranches, paramSet, numCells, key
   trueZzsBase <- paste0(dataDir, "/", paramSet, "/tumor_depths_", numCells)
   zzsTrueMat <- createCnpDistMat(paste0(trueZzsBase, "_true.zzs.cnp2cnp"), paste0(trueZzsBase, "_trueRev.zzs.cnp2cnp"))
   zzsBase <- paste0(dataDir, "/", paramSet, "/output_", key, "_", gsub("/", "_", paramSet), "_k", k, "_c", numCells)
-  if(grepl("Mut", key) & grepl("params[23]", paramSet)) {
-    #zzsBase <- paste0(dataDir, "/", paramSet, "/output_", key, "_reuseMutEsts_shortcut_", gsub("/", "_", paramSet), "_k", k, "_c", numCells)
-  }
   zzsSconceMat <- createCnpDistMat(paste0(zzsBase, "_roundedsconce.zzs.cnp2cnp"), paste0(zzsBase, "_roundedsconceRev.zzs.cnp2cnp"))
   zzsMeanMat <- createCnpDistMat(paste0(zzsBase, "_roundedmean.zzs.cnp2cnp"), paste0(zzsBase, "_roundedmeanRev.zzs.cnp2cnp"))
 
@@ -992,7 +958,6 @@ createNJtreesCompareMuts <- function(mergedTreeBranches, paramSet, numCells, key
   eucSconceTree <- nj(dist(sconceCNs, method="euclidean")) # tree built on euclidean distance btn sconce copy number profiles
   eucMeanTree   <- nj(dist(meanCNs, method="euclidean")) # tree built on euclidean distance btn mean copy number profiles
 
-  #list(eucTrueTree=eucTrueTree, eucSconceTree=eucSconceTree, eucMeanTree=eucMeanTree, eucMedianTree=eucMedianTree, eucModeTree=eucModeTree, cnpTrueTree=cnpTrueTree, cnpSconceTree=cnpSconceTree, cnpMeanTree=cnpMeanTree, cnpMedianTree=cnpMedianTree, cnpModeTree=cnpModeTree, trueDistTree=trueDistTree, inferredDistTree=inferredDistTree)
   list(eucTrueTree=eucTrueTree, eucSconceTree=eucSconceTree, eucMeanTree=eucMeanTree, cnpTrueTree=cnpTrueTree, cnpSconceTree=cnpSconceTree, cnpMeanTree=cnpMeanTree, zzsTrueTree=zzsTrueTree, zzsSconceTree=zzsSconceTree, zzsMeanTree=zzsMeanTree, trueDistTree=trueDistTree, inferredDistTree_t2_t3=inferredDistTree_t2_t3,inferredDistTree_t1=inferredDistTree_t1)
 }
 
@@ -1094,7 +1059,6 @@ makeRFdistPlotMuts <- function(dists, plotTitle) {
   p
 }
 makeRFdistPlotCompareMuts <- function(dists, plotTitle) {
-  #p <- ggplot(subset(dists, distMetric == "symmetric.difference"), aes(x=bed, colour=program, y=value)) + geom_boxplot() + theme_bw() + theme(legend.title=element_blank(), axis.title.x=element_blank(), axis.text.x=element_text(angle=90, hjust=1, vjust=0.5)) + facet_grid(~metric, space="free", scales="free_x", labeller=label_parsed)
   p <- ggplot(subset(dists, distMetric == "symmetric.difference"), aes(x=bed, fill=program, y=value)) + geom_bar(stat="identity", position="dodge") + theme_bw() + theme(legend.title=element_blank(), axis.title.x=element_blank(), axis.text.x=element_text(angle=90, hjust=1, vjust=0.5)) + facet_grid(~metric, space="free", scales="free_x", labeller=label_parsed) + scale_fill_manual(values=sconce2mutColors)
   if(!is.na(plotTitle)) {
     p <- p + labs(x="distance metric", y="RF distance", title=plotTitle)
@@ -1147,7 +1111,6 @@ writeMedianRFdistTexFiles <- function(dists, medianRFdistFile) {
 
   write.table(medianDists_w, file=paste0(medianRFdistFile, "_medianDists.txt"), sep="\t", quote=F, row.names=T, col.names=NA)
 
-  #texColnames <- c("\\textbf{SCONCE}", "\\textbf{one pair}", "\\textbf{mean}", "\\textbf{median}", "\\textbf{mode}", "\\textbf{AneuFinder}") # may need to insert line breaks so the tables fit nicely. see plotJointBreakpointComparison.R for syntax
   texColnames <- paste0("\\textbf{", colnames(medianDists_w), "}")
   names(texColnames) <- colnames(medianDists_w)
 
@@ -1242,7 +1205,6 @@ orderedTreeNamesMuts <- c("Euclidean dist on true CNPs",
                           "inferred t2+t3")
 
 metricStringsMuts <- c("Euclidean\ndistance", "cnp2cnp\ndistance", "MEDICC\ndistance", "dist(t[1])", "t[2]+t[3]")
-#bedStringsMuts <- c("SCONCE", "mean", "true", "t[1]", "t[2]+t[3]")
 bedStringsMuts <- c("SCONCE", "mean", "true", "dist(t1)", "t2+t3")
 
 

@@ -9,9 +9,6 @@ fileList <- read.table(args[1], stringsAsFactors=F)$V1
 outputFile <- args[2]
 
 # read in all diploid files. Assumes all coords are consistent across all samples
-#coords <- read.table(fileList[1], stringsAsFactors=F)
-#colnames(coords) <- c("chr", "start", "end", "depth")
-#coords[,"depth"] <- NULL
 dat <- do.call(cbind, lapply(fileList, FUN=function(f) {
   tab <- read.table(f, stringsAsFactors=F)
   colnames(tab) <- c("chr", "start", "end", f)
@@ -63,7 +60,6 @@ loglikeFunMax <- function(param) {
 }
 
 print(system.time(res <- optim(c(10,1,1),loglikeFunMax, control=list(fnscale=-1)))) # ~12 mins for Navin 2011 dataset (~60 cells), 20-30hrs for 10x dataset (~2k cells)
-#print(res)
 sprintf("%.20f", res$par)
 meanVarTab <- data.frame(c("intercept", "slope", "poly2"), res$par)
 write.table(format(meanVarTab, digits=10), file=outputFile, quote=F, sep="=", col.names=F, row.names=F)

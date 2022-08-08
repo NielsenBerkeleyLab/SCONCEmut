@@ -21,21 +21,17 @@ calcIndvSSE <- function(sconceFileList, meanFileList, medianFileList, modeFileLi
 
     colnames(sconceDat) <- colnames(meanDat) <- colnames(medianDat) <- colnames(modeDat) <- colnames(groundTruth) <- header
     sconceDat$idx <- meanDat$idx <- medianDat$idx <- modeDat$idx <- groundTruth$idx <- 1:nrow(sconceDat)
-  
+
     sconceMerged <- merge(sconceDat, groundTruth, by=c("chr", "start", "end", "idx"))
     meanMerged <- merge(meanDat, groundTruth, by=c("chr", "start", "end", "idx"))
     medianMerged <- merge(medianDat, groundTruth, by=c("chr", "start", "end", "idx"))
     modeMerged <- merge(modeDat, groundTruth, by=c("chr", "start", "end", "idx"))
-  
+
     sconceSumSq <- sum((sconceMerged$copyNumber.x - sconceMerged$copyNumber.y)^2)
     meanSumSq <- sum((meanMerged$copyNumber.x - meanMerged$copyNumber.y)^2)
     medianSumSq <- sum((medianMerged$copyNumber.x - medianMerged$copyNumber.y)^2)
     modeSumSq <- sum((modeMerged$copyNumber.x - modeMerged$copyNumber.y)^2)
-    #sconceSumSq <- sum((round(sconceMerged$copyNumber.x) - round(sconceMerged$copyNumber.y))^2)
-    #meanSumSq <- sum((round(meanMerged$copyNumber.x) - round(meanMerged$copyNumber.y))^2)
-    #medianSumSq <- sum((round(medianMerged$copyNumber.x) - round(medianMerged$copyNumber.y))^2)
-    #modeSumSq <- sum((round(modeMerged$copyNumber.x) - round(modeMerged$copyNumber.y))^2)
-  
+
     data.frame(cell=cellID, SCONCE=sconceSumSq, mean=meanSumSq, median=medianSumSq, mode=modeSumSq)
   }))
   dat
@@ -54,7 +50,6 @@ calcPairsSSE <- function(pairsFileList, groundTruthList, cellIDs) {
     groundTruth <- groundTruthList[[cellID]]
     pairMerged <- merge(pairDat, groundTruth, by=c("chr", "start", "end", "idx"))
     sumSq <- sum((pairMerged$copyNumber.x - pairMerged$copyNumber.y)^2)
-    #sumSq <- sum((round(pairMerged$copyNumber.x) - round(pairMerged$copyNumber.y))^2)
     data.frame(pair=pair, cell=cellID, variable="one pair", value=sumSq)
   }))
   dat
@@ -90,9 +85,6 @@ calcAllSSE <- function(paramSet, key, outputFile, numCells, mutFilt=NULL, forceR
     }
   } else {
     outputFilePrefix <- paste0("output_", key, "_", gsub("/", "_", paramSet), "_k", k, "_c", numCells, mutFilt) # based on scAllP_*sh outBase variable
-    if(grepl("Mut", key) & grepl("params[23]", paramSet)) {
-      #outputFilePrefix <- paste0("output_", key, "_", "reuseMutEsts_shortcut_", gsub("/", "_", paramSet), "_k", k, "_c", numCells, mutFilt) # based on scAllP_*sh outBase variable
-    }
     unfiltSconceFileList <- system(paste0("find ", dataDir, paramSet, " -maxdepth 1 -name \"", outputFilePrefix, "*__sconce__*.bed\" | sort -V"), intern=T)
     unfiltPairsFileList <- system(paste0("find ", dataDir, paramSet,  " -maxdepth 1 -name \"", outputFilePrefix, "*__pair_*.bed\" | sort -V"), intern=T)
     unfiltMeanFileList <- system(paste0("find ", dataDir, paramSet,   " -maxdepth 1 -name \"", outputFilePrefix, "*__mean.bed\" | sort -V"), intern=T)
@@ -152,18 +144,18 @@ calcAllSSE <- function(paramSet, key, outputFile, numCells, mutFilt=NULL, forceR
   toPlot
 }
 
-makeSSEPlot <- function(toPlot, plotTitle) {  
+makeSSEPlot <- function(toPlot, plotTitle) {
   medians <- do.call(rbind, lapply(levels(toPlot$variable), FUN=function(x) {data.frame(variable=x, median=median(toPlot[toPlot$variable == x, "value"]))}))
   p <- ggplot(toPlot, aes(x=variable, y=value, colour=variable, alpha=(variable == "one pair"))) + geom_boxplot(outlier.alpha=0) + geom_point(position="jitter") + theme_bw() + theme(axis.text.x=element_blank(), legend.title=element_blank()) + stat_summary(fun="median", fun.min="median", fun.max= "median", geom="crossbar", colour="gray35", show.legend=F) + geom_text(data=medians, colour="black", alpha=1, aes(label=sprintf("%.2f", round(median, digits=2)), x=variable),y=Inf, hjust=1, angle=90) + scale_alpha_manual(values=c(1, 0.2), guide="none")
   if(!is.na(plotTitle)) {
-    p <- p + labs(x="method", y="SSE", colour="method", title=plotTitle) 
+    p <- p + labs(x="method", y="SSE", colour="method", title=plotTitle)
   } else {
     p <- p + labs(x="method", y="SSE", colour="method")
   }
   p
 }
 
-makeSSEPlotCompareMuts <- function(toPlot, plotTitle) {  
+makeSSEPlotCompareMuts <- function(toPlot, plotTitle) {
   medians <- do.call(rbind, lapply(levels(toPlot$variable), FUN=function(x) {
     do.call(rbind, lapply(levels(toPlot$program), FUN=function(prog) {
       data.frame(variable=x, program=prog, median=median(toPlot[toPlot$variable == x & toPlot$program == prog, "value"]))
@@ -171,7 +163,7 @@ makeSSEPlotCompareMuts <- function(toPlot, plotTitle) {
   }))
   p <- ggplot(toPlot, aes(x=variable, y=value, colour=program, alpha=(variable == "one pair"))) + geom_boxplot(outlier.alpha=0) + geom_point(position=position_jitterdodge()) + theme_bw() + stat_summary(fun="median", fun.min="median", fun.max= "median", geom="crossbar", colour="gray35", show.legend=F) + geom_text(data=medians, colour="black", alpha=1, aes(label=sprintf("%.2f", round(median, digits=2)), x=variable),y=Inf, hjust=1, vjust=ifelse(medians$program == "SCONCE2", -1, 1), angle=90) + scale_alpha_manual(values=c(1, 0.2), guide="none") + scale_colour_manual(values=sconce2mutColors)
   if(!is.na(plotTitle)) {
-    p <- p + labs(x=element_blank(), y="SSE", colour="method", title=plotTitle) 
+    p <- p + labs(x=element_blank(), y="SSE", colour="method", title=plotTitle)
   } else {
     p <- p + labs(x=element_blank(), y="SSE", colour="method")
   }
@@ -190,54 +182,6 @@ getCellOrdering <- function(currSelectionMethod, sconceDistFromCellNum) {
   }
   cellSeq
 }
-
-#calcDiminishingReturns <- function(sconceList, pairsFileList, groundTruthList, btnSconceDist, cellIDs) {
-#  # cellID | numCellsSummarized | selectionMethod | sumSq | improvement from sconce | cellAdded
-#  dat <- do.call(rbind, lapply(cellIDs, FUN=function(cellID) {
-#    sconceDistFromCellNum <- as.matrix(btnSconceDist)[cellID,]
-#    sconceDistFromCellNum <- sconceDistFromCellNum[names(sconceDistFromCellNum) != cellID] # remove 0 dist from self
-#
-#    filtPairsFileList <- pairsFileList[sapply(str_extract_all(pairsFileList, "cancer_cell_[0-9]*."), FUN=function(cellNames) {cellNames[3] == cellID})]
-#    pairsList <- lapply(filtPairsFileList, FUN=function(f) {
-#      currPair <- read.table(f, stringsAsFactors=F, sep="\t", header=F)
-#      colnames(currPair) <- header
-#      currPair$idx <- 1:nrow(currPair)
-#      currPair
-#    })
-#    # set the name to be the other cell in the pair (ie that isn't cellID)
-#    names(pairsList) <- sapply(str_extract_all(filtPairsFileList, "cancer_cell_[0-9]*."), FUN=function(cellNames) {cellNames[cellNames != cellID]})
-#
-#    # special case for sconce (ie 1 cell summarized)
-#    sconceDat <- sconceList[[cellID]]
-#    groundTruth <- groundTruthList[[cellID]]
-#    sconceMerged <- merge(sconceDat, groundTruth, by=c("chr", "start", "end", "idx"))
-#    sconceSumSq <- sum((sconceMerged$copyNumber.x - sconceMerged$copyNumber.y)^2)
-#    sconceEntry <- data.frame(cell=cellID, numCellsSummarized=1, selectionMethod=NA, SSE=sconceSumSq, impr=0, cellAdded=NA)
-#
-#    # cellID | numCellsSummarized | selectionMethod | sumSq | improvement from sconce | cellAdded
-#    sumSqOverCells <- do.call(rbind, lapply(selectionMethods, FUN=function(currSelectionMethod) {
-#      currSconceEntry <- sconceEntry
-#      currSconceEntry$selectionMethod <- currSelectionMethod
-#      cellSeq <- getCellOrdering(currSelectionMethod, sconceDistFromCellNum)
-#      pairsCopyNumberMat <- do.call(cbind, lapply(names(cellSeq), FUN=function(selCell) {
-#        pairsList[[selCell]]$copyNumber
-#      }))
-#      colnames(pairsCopyNumberMat) <- names(cellSeq)
-#      currSumSqTab <- rbind(currSconceEntry, do.call(rbind, lapply(1:(length(cellIDs)-1), FUN=function(i) {
-#        selectedCells <- names(cellSeq[1:i])
-#        currPairsCopyNumberMat <- pairsCopyNumberMat[,selectedCells, drop=F]
-#        meanCopyNumber <- rowMeans(currPairsCopyNumberMat)
-#        sumSq <- sum((groundTruth$copyNumber - meanCopyNumber)^2)
-#        cellAdded <- selectedCells[length(selectedCells)]
-#        data.frame(cell=cellID, numCellsSummarized=i+1, selectionMethod=currSelectionMethod, SSE=sumSq, impr=sumSq-sconceSumSq, cellAdded=cellAdded) 
-#      })))
-#      currSumSqTab
-#    }))
-#    sumSqOverCells
-#  }))
-#  dat$selectionMethod <- factor(dat$selectionmethod, levels=selectionMethods)
-#  dat
-#}
 
 calcDiminishingReturns <- function(paramSet, key, outputFile, numCells, forceRecalc=F) {
   changeInSSEDat <- NULL
@@ -283,7 +227,6 @@ calcDiminishingReturns <- function(paramSet, key, outputFile, numCells, forceRec
     colnames(allSconceCallsMat) <- str_extract(sconceFileList, "cancer_cell_[0-9]*.")
     btnSconceDist <- dist(t(allSconceCallsMat), method="euclidean")
 
-    #indvDat <- calcIndvSSEAsAddCells(sconceFileList, pairsFileList, groundTruthList, btnSconceDist, cellIDs)
     # cellID | numCellsSummarized | selectionMethod | sumSq | improvement from sconce | cellAdded
     changeInSSEDat <- do.call(rbind, lapply(cellIDs, FUN=function(cellID) {
       sconceDistFromCellNum <- as.matrix(btnSconceDist)[cellID,]
@@ -321,7 +264,7 @@ calcDiminishingReturns <- function(paramSet, key, outputFile, numCells, forceRec
           meanCopyNumber <- rowMeans(currPairsCopyNumberMat)
           sumSq <- sum((groundTruth$copyNumber - meanCopyNumber)^2)
           cellAdded <- selectedCells[length(selectedCells)]
-          data.frame(cell=cellID, numCellsSummarized=i+1, selectionMethod=currSelectionMethod, SSE=sumSq, impr=sumSq-sconceSumSq, cellAdded=cellAdded) 
+          data.frame(cell=cellID, numCellsSummarized=i+1, selectionMethod=currSelectionMethod, SSE=sumSq, impr=sumSq-sconceSumSq, cellAdded=cellAdded)
         })))
         currSumSqTab
       }))
@@ -333,9 +276,9 @@ calcDiminishingReturns <- function(paramSet, key, outputFile, numCells, forceRec
   changeInSSEDat
 }
 
-makeDiminishingReturnsPlot <- function(toPlot, plotTitle) {  
+makeDiminishingReturnsPlot <- function(toPlot, plotTitle) {
   # improvement over sconce, with mean and se crossbars
-  p <- ggplot(toPlot, aes(x=numCellsSummarized, y=impr, colour=selectionMethod, group=interaction(cell, selectionMethod))) + theme_bw() + stat_summary(fun.data="mean_se", geom="errorbar", aes(group=selectionMethod), width=0.7, alpha=0.7) + stat_summary(fun=mean, geom="line", aes(group=selectionMethod)) + theme(legend.title=element_blank()) 
+  p <- ggplot(toPlot, aes(x=numCellsSummarized, y=impr, colour=selectionMethod, group=interaction(cell, selectionMethod))) + theme_bw() + stat_summary(fun.data="mean_se", geom="errorbar", aes(group=selectionMethod), width=0.7, alpha=0.7) + stat_summary(fun=mean, geom="line", aes(group=selectionMethod)) + theme(legend.title=element_blank())
   if(!is.na(plotTitle)) {
     p <- p + labs(x=expression(kappa*" = # cells summarized"), y="change in SSE", title=plotTitle)
   } else {
@@ -366,16 +309,16 @@ calcIndvBreakpoints <- function(sconceFileList, meanFileList, medianFileList, mo
 
     colnames(sconceDat) <- colnames(meanDat) <- colnames(medianDat) <- colnames(modeDat) <- header
     sconceDat$idx <- meanDat$idx <- medianDat$idx <- modeDat$idx <- 1:nrow(sconceDat)
-  
+
     groundTruth <- groundTruthList[[cellID]]
     sconceMerged <- merge(sconceDat, groundTruth, by=c("chr", "start", "end", "idx"))
     meanMerged <- merge(meanDat, groundTruth, by=c("chr", "start", "end", "idx"))
     medianMerged <- merge(medianDat, groundTruth, by=c("chr", "start", "end", "idx"))
     modeMerged <- merge(modeDat, groundTruth, by=c("chr", "start", "end", "idx"))
- 
+
     trueBreakIdx <- groundTruthBreakIdxList[[cellID]]
     numTrueBreakpoints <- numTrueBreakpointsList[[cellID]]
-  
+
     colnames(sconceMerged)[colnames(sconceMerged) == "copyNumber.y"] <- "trueCopyNumber"
     colnames(sconceMerged)[colnames(sconceMerged) == "copyNumber.x"] <- "inferredCopyNumber"
     colnames(meanMerged)[colnames(meanMerged) == "copyNumber.y"] <- "trueCopyNumber"
@@ -384,34 +327,34 @@ calcIndvBreakpoints <- function(sconceFileList, meanFileList, medianFileList, mo
     colnames(medianMerged)[colnames(medianMerged) == "copyNumber.x"] <- "inferredCopyNumber"
     colnames(modeMerged)[colnames(modeMerged) == "copyNumber.y"] <- "trueCopyNumber"
     colnames(modeMerged)[colnames(modeMerged) == "copyNumber.x"] <- "inferredCopyNumber"
-  
+
     # sort by idx
     sconceMerged <- sconceMerged[with(sconceMerged, order(idx)),]
     meanMerged <- meanMerged[with(meanMerged, order(idx)),]
     medianMerged <- medianMerged[with(medianMerged, order(idx)),]
     modeMerged <- modeMerged[with(modeMerged, order(idx)),]
-  
+
     # calc rle for num breakpoints and dist to nearest breakpoint for each file
     sconceInferredRle <- rle(sconceMerged$inferredCopyNumber)
     sconceNumInferredBreakpoints <- length(sconceInferredRle$values)
     sconceInferredBreakIdx <- head(cumsum(sconceInferredRle$lengths),-1)
     sconceSummedBreakpointDist <- sum(sapply(trueBreakIdx, FUN=function(x) {min(abs(sconceInferredBreakIdx - x))}))
-  
+
     meanInferredRle <- rle(meanMerged$inferredCopyNumber)
     meanNumInferredBreakpoints <- length(meanInferredRle$values)
     meanInferredBreakIdx <- head(cumsum(meanInferredRle$lengths),-1)
     meanSummedBreakpointDist <- sum(sapply(trueBreakIdx, FUN=function(x) {min(abs(meanInferredBreakIdx - x))}))
-  
+
     medianInferredRle <- rle(medianMerged$inferredCopyNumber)
     medianNumInferredBreakpoints <- length(medianInferredRle$values)
     medianInferredBreakIdx <- head(cumsum(medianInferredRle$lengths),-1)
     medianSummedBreakpointDist <- sum(sapply(trueBreakIdx, FUN=function(x) {min(abs(medianInferredBreakIdx - x))}))
-  
+
     modeInferredRle <- rle(modeMerged$inferredCopyNumber)
     modeNumInferredBreakpoints <- length(modeInferredRle$values)
     modeInferredBreakIdx <- head(cumsum(modeInferredRle$lengths),-1)
     modeSummedBreakpointDist <- sum(sapply(trueBreakIdx, FUN=function(x) {min(abs(modeInferredBreakIdx - x))}))
-  
+
     sources <- c("SCONCE", "mean", "median", "mode")
     allNumInferredBreakpoints <- c(sconceNumInferredBreakpoints, meanNumInferredBreakpoints, medianNumInferredBreakpoints, modeNumInferredBreakpoints)
     allSummedBreakpointDist <- c(sconceSummedBreakpointDist, meanSummedBreakpointDist, medianSummedBreakpointDist, modeSummedBreakpointDist)
@@ -443,7 +386,7 @@ calcPairsBreakpoints <- function(pairsFileList, groundTruthList, groundTruthBrea
     pairNumInferredBreakpoints <- length(pairInferredRle$values)
     pairInferredBreakIdx <- head(cumsum(pairInferredRle$lengths),-1)
     pairSummedBreakpointDist <- sum(sapply(trueBreakIdx, FUN=function(x) {min(abs(pairInferredBreakIdx - x))}))
- 
+
     data.frame(pair=pair, cell=cellID, numTrueBreakpoints=numTrueBreakpoints, variable="one pair", numInferredBreakpoints=pairNumInferredBreakpoints, summedBreakpointDist=pairSummedBreakpointDist, omega=pairNumInferredBreakpoints / numTrueBreakpoints)
   }))
   dat
@@ -475,7 +418,7 @@ calcAneuBreakpoints <- function(aneuFileList, groundTruthList, groundTruthBreakI
     aneuNumInferredBreakpoints <- length(aneuInferredRle$values)
     aneuInferredBreakIdx <- head(cumsum(aneuInferredRle$lengths),-1)
     aneuSummedBreakpointDist <- sum(sapply(trueBreakIdx, FUN=function(x) {min(abs(aneuInferredBreakIdx - x))}))
- 
+
     data.frame(cell=cellID, numTrueBreakpoints=numTrueBreakpoints, variable="AneuFinder", numInferredBreakpoints=aneuNumInferredBreakpoints, summedBreakpointDist=aneuSummedBreakpointDist, omega=aneuNumInferredBreakpoints / numTrueBreakpoints)
   }))
   dat
@@ -491,9 +434,6 @@ calcAllBreakpoints <- function(paramSet, key, outputFile, numCells, mutFilt=NULL
     }
   } else {
     outputFilePrefix <- paste0("output_", key, "_", gsub("/", "_", paramSet), "_k", k, "_c", numCells, mutFilt) # based on scAllP_*sh outBase variable
-    if(grepl("Mut", key) & grepl("params[23]", paramSet)) {
-      #outputFilePrefix <- paste0("output_", key, "_", "reuseMutEsts_shortcut_", gsub("/", "_", paramSet), "_k", k, "_c", numCells, mutFilt) # based on scAllP_*sh outBase variable
-    }
     unfiltSconceFileList <- system(paste0("find ", dataDir, paramSet, " -maxdepth 1 -name \"", outputFilePrefix, "*__sconce__*.bed\" | sort -V"), intern=T)
     unfiltPairsFileList <- system(paste0("find ", dataDir, paramSet,  " -maxdepth 1 -name \"", outputFilePrefix, "*__pair_*.bed\" | sort -V"), intern=T)
     unfiltMeanFileList <- system(paste0("find ", dataDir, paramSet,   " -maxdepth 1 -name \"", outputFilePrefix, "*__mean.bed\" | sort -V"), intern=T)
@@ -569,17 +509,16 @@ calcAllBreakpoints <- function(paramSet, key, outputFile, numCells, mutFilt=NULL
 makeBreakpointPlot <- function(toPlot, plotTitle) {
   p <- ggplot(toPlot, aes(x=numInferredBreakpoints/numTrueBreakpoints, y=summedBreakpointDist, colour=variable, alpha=(variable == "one pair"))) + geom_point() + theme_bw() + guides(alpha="none") + scale_alpha_manual(values=c(1, 0.1), guide="none") + scale_y_log10() + theme(legend.title=element_blank()) + geom_vline(xintercept=1, linetype="dashed", colour="red", alpha=0.5)
   if(!is.na(plotTitle)) {
-    p <- p + labs(x=expression(omega), y="breakpoint dist", title=plotTitle) 
+    p <- p + labs(x=expression(omega), y="breakpoint dist", title=plotTitle)
   } else {
     p <- p + labs(x=expression(omega), y="breakpoint dist")
   }
   p
 }
 makeBreakpointPlotCompareMuts <- function(toPlot, plotTitle) {
-  #p <- ggplot(toPlot, aes(x=numInferredBreakpoints/numTrueBreakpoints, y=summedBreakpointDist, colour=variable, shape=program, alpha=(variable == "one pair"))) + geom_point(size=4) + theme_bw() + guides(alpha="none") + scale_alpha_manual(values=c(1, 0.1), guide="none") + scale_y_log10() + theme(legend.title=element_blank()) + geom_vline(xintercept=1, linetype="dashed", colour="red", alpha=0.5) + geom_point(colour="white", size=1.5) + geom_line(aes(group=interaction(cell, variable)))
   p <- ggplot(toPlot, aes(x=numInferredBreakpoints/numTrueBreakpoints, y=summedBreakpointDist, colour=variable, shape=program, alpha=(variable == "one pair"))) + geom_point() + theme_bw() + guides(alpha="none") + scale_alpha_manual(values=c(1, 0.1), guide="none") + scale_y_log10() + theme(legend.title=element_blank()) + geom_vline(xintercept=1, linetype="dashed", colour="red", alpha=0.5) + geom_line(aes(group=interaction(cell, variable)))
   if(!is.na(plotTitle)) {
-    p <- p + labs(x=expression(omega), y="breakpoint dist", title=plotTitle) 
+    p <- p + labs(x=expression(omega), y="breakpoint dist", title=plotTitle)
   } else {
     p <- p + labs(x=expression(omega), y="breakpoint dist")
   }
@@ -606,7 +545,6 @@ writeMedianDistOmegaTexFiles <- function(breakpointDat, medianDistOmegaTexFile) 
   write.table(medianDists, file=paste0(medianDistOmegaTexFile, "_medianDists.txt"), sep="\t", quote=F, row.names=T, col.names=NA)
   write.table(medianOmegas, file=paste0(medianDistOmegaTexFile, "_medianOmegas.txt"), sep="\t", quote=F, row.names=T, col.names=NA)
 
-  #texColnames <- c("\\textbf{SCONCE}", "\\textbf{one pair}", "\\textbf{mean}", "\\textbf{median}", "\\textbf{mode}", "\\textbf{AneuFinder}") # may need to insert line breaks so the tables fit nicely. see plotJointBreakpointComparison.R for syntax
   texColnames <- paste0("\\textbf{", programs, "}")
   names(texColnames) <- levels(programs)
 
