@@ -11,13 +11,13 @@ i=$(echo "$p" | grep -E "[0-9]+" -o) # pull out the param set number (assumes a 
 modType=$(dirname $p)
 echo "setting up "$p""
 
-export scripts="/space/s2/sandra/alleleFreqHmm/scripts"
-export src="/space/s2/sandra/alleleFreqHmm/src"
-export ref="/space/s2/sandra/hg19/hg19_lite.fa"
-export windows="/space/s2/sandra/hg19/hg19_lite.250kb_windows"
+export scripts="./scripts"
+export src="./src"
+export ref="../hg19/hg19_lite.fa"
+export windows="../hg19/hg19_lite.250kb_windows"
 
 mkdir -p "$p"
-muts/CNV_muts "$modType"/infile"$i".txt "$modType"/paramfile"$i".txt 0 2>&1 > "$p"sim.log
+./SCONCEmut_sim "$modType"/infile"$i".txt "$modType"/paramfile"$i".txt 0 2>&1 > "$p"sim.log
 simRet=$?
 if [ $simRet -ne 0 ] ; then 
   echo "simulation failed"
